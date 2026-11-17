@@ -15,16 +15,17 @@ from wowfish.gui.presenter import (
 )
 
 CHECKLIST = (
-    "In the game, before starting:\n"
-    "  1. Stand at the water with Fishing on an action bar key (the cast key below).\n"
-    "  2. Bind Interact With Target (Options > Keybindings > Targeting) to the interact key.\n"
-    "  3. Enable Auto Loot (Options > Controls).\n"
-    "  4. Type /console SoftTargetIconGameObject 1 once (shows the gold gear over the bobber).\n"
-    "  5. Set Ambience and Music to 0 so the splash is easy to hear.\n"
-    "  6. Optional: put a macro with /quit on an action bar key and enter it as the quit key;\n"
-    "     when the time limit below runs out, the bot presses it to close the game.\n"
-    "Then press Start on the Fish tab. The first cast of every run measures the gear icon, so\n"
-    "the bite check and the calibration below are optional: use them when fishing misbehaves."
+    "Before every session:\n"
+    "  1. Enable Interact Key and Auto Loot. Keep Sound Effects on; set Music and Ambience to 0.\n"
+    "  2. Enter each command separately in the game chat:\n"
+    "     /console SoftTargetIconInteract 1\n"
+    "     /console SoftTargetIconGameObject 1\n"
+    "  3. Move River Desk to the side, clear of the bobber. Minimizing alone may not be enough.\n"
+    "     Click Calibrate the gear icon, cast manually in WoW, then click Save calibration.\n"
+    "  4. Catch the first fish manually; several catches may be needed for reliable detection.\n"
+    "  5. Press Start on the Fish tab, minimize River Desk, and keep WoW in the foreground.\n"
+    "Czech keyboard: use Cast key [ and Interact key ] here; bind Fishing to ú and Interact to )\n"
+    "in WoW. After stopping, restore the game settings you changed. Keep the key bindings."
 )
 LURE_HINT = (
     "Optional. A macro like /use Shiny Bauble + /use 16 that puts a lure on the pole; it is "

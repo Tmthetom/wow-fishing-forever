@@ -1,51 +1,48 @@
-# WoW Fishing Forever — úpravy pro Windows
+# WoW Fishing Forever — Windows fork
 
-Tento fork přidává vlastní spouštění ze zdrojového kódu na Windows. Původní projekt a jeho úplná dokumentace jsou v [rsamf/wow-fishing-forever](https://github.com/rsamf/wow-fishing-forever). Platí [licence MIT](LICENSE).
+A Windows fork of [rsamf/wow-fishing-forever](https://github.com/rsamf/wow-fishing-forever), a World of Warcraft fishing bot that detects the bobber icon and listens for a splash. Licensed under [MIT](LICENSE).
 
-## Co jsme změnili
+## What this fork changes
 
-- `RiverDesk.cmd` spouští aplikaci ze zdrojového kódu v místním Pythonu. `RiverDesk.exe` je název běžícího procesu a `River Desk` titulek okna.
-- Windows spouštěč ukládá nastavení a logy do `.local/state/`. Python, stažené závislosti a nastavení konkrétního počítače zůstávají mimo Git.
-- Návod pro Codex je v [AGENTS.md](AGENTS.md).
+- **Local Windows launcher:** `RiverDesk.cmd` runs the source code using a local Python installation. The window is named **River Desk** and the process is `RiverDesk.exe`.
+- **Portable setup:** settings and logs stay in `.local/state/`; Python and dependencies also stay inside the project folder. Machine-specific files are excluded from Git.
+- **Practical setup instructions:** Czech keyboard bindings, calibration, and window placement based on use on this PC.
 
-## Instalace na druhém PC
+## Install and launch
 
-Naklonuj tento fork do místní složky, otevři ji v Codexu a zadej: „Přečti AGENTS.md a zprovozni mi WoW Fishing Forever na tomto PC.“ Soubor obsahuje i příkazy pro ruční instalaci a diagnostiku.
+Clone this fork and follow [AGENTS.md](AGENTS.md), or ask Codex: “Read AGENTS.md and set up this project on this PC.” Open `RiverDesk.cmd` to launch the app. Run `.\RiverDesk.cmd doctor` from PowerShell for diagnostics; missing game warnings are expected when WoW is closed.
 
-### Klávesy nastav jen jednou
+## Set the keys once
 
-| Funkce ve WoW | Klávesa | Pole v aplikaci |
+| Action | WoW binding (Czech layout) | App setting |
 | --- | --- | --- |
-| Fishing na akční liště | `ú` | **Cast key** `[` |
-| Interact With Target | `)` | **Interact key** `]` |
+| Fishing | `ú` | **Cast key:** `[` |
+| Interact With Target | `)` | **Interact key:** `]` |
 
-Pokud ti nastavení v aplikaci už funguje, ponech ho. Při nové instalaci zadej v **Setup** `[` a `]` a klikni na **Save keys**. Aplikace těmito znaky označuje stejné fyzické klávesy, které na českém rozložení píšou `ú` a `)`. Přiřazení ve WoW nastav jen jednou a mezi relacemi je neměň. **Lure key** nech prázdné, pokud nepoužíváš makro na nástrahu.
+Enter the app values in **Setup** and click **Save keys**. They refer to the same physical keys on the Czech layout. Leave **Lure key** empty unless you use a lure macro. Keep working bindings unchanged between sessions.
 
-## Před každou relací
+## Before every session
 
-1. Ve WoW si poznamenej původní hodnoty nastavení, která měníš. Hodnoty ikon ověříš přes `/dump GetCVar("SoftTargetIconInteract")` a `/dump GetCVar("SoftTargetIconGameObject")`.
-2. V **Options** zapni **Enable Interact Key** a **Auto Loot**. V herním chatu zadej každý příkaz na samostatném řádku:
+1. Note any game settings you change so you can restore them later. Enable **Enable Interact Key** and **Auto Loot**. Set **Music** and **Ambience** to zero; keep **Sound Effects** and master sound on.
+2. Enable both interaction icons. Enter each command separately in the game chat:
 
    ```text
    /console SoftTargetIconInteract 1
    /console SoftTargetIconGameObject 1
    ```
 
-3. V **Options → Sound** stáhni **Music** a **Ambience** na nulu. **Sound Effects** a hlavní zvuk ponech zapnuté, aby aplikace slyšela šplouchnutí.
-4. Postav se k vodě a ručně nahoď klávesou `ú`. Ověř, že vidíš zlatou ikonu nad splávkem a že při záběru funguje `)`. Když se ikona neobjeví, zkus nahodit blíž a zkontroluj hodnoty příkazů uvedených výše.
-5. Otevři `RiverDesk.cmd`, na kartě **Fish** klikni na **Start** a přepni se zpět do WoW. Nech hru v popředí a vodu v záběru. Kalibrace obvykle proběhne při prvním nahození. Při potížích použij na kartě **Setup** tlačítko **Calibrate the gear icon** a po ručním nahození ulož výsledek přes **Save calibration**.
+   Before changing them, you can check their current values with `/dump GetCVar("SoftTargetIconInteract")` and `/dump GetCVar("SoftTargetIconGameObject")`.
+3. **Calibrate every session.** Stand by the water. Move River Desk to the side, clear of the bobber and its gold icon; minimizing alone is not always enough. In **Setup**, click **Calibrate the gear icon**, return to WoW, and cast manually with `ú`. Once the app detects the icon, click **Save calibration**.
+4. **Catch the first fish manually** with `)`. You may need to catch several fish manually before detection works reliably. If the gold icon is missing, cast closer and check the commands above.
+5. On the **Fish** tab, click **Start**. Keep River Desk positioned to the side, then minimize it and return to WoW. Keep the game in the foreground and the water unobstructed. If detection fails, stop the bot, repeat calibration and the manual catches, then try again.
 
-## Po každé relaci
+## After every session
 
-1. Na kartě **Fish** klikni na **Stop** a zavři aplikaci.
-2. Ve WoW vrať **Music**, **Ambience**, **Enable Interact Key** a **Auto Loot** na původní hodnoty, pokud jsi je před relací změnil.
-3. Vrať i hodnoty obou příkazů pro ikony. Pokud byly před relací obě `0`, zadej:
+Click **Stop**, then close River Desk. Restore any sound, interaction, and loot settings you changed. Restore the icon values too; if both were originally `0`, enter:
 
-   ```text
-   /console SoftTargetIconInteract 0
-   /console SoftTargetIconGameObject 0
-   ```
+```text
+/console SoftTargetIconInteract 0
+/console SoftTargetIconGameObject 0
+```
 
-Klávesy `ú` a `)` zůstávají přiřazené pro příští relaci.
-
-Pro diagnostiku spusť v PowerShellu z kořene projektu `.\RiverDesk.cmd doctor`. Upozornění na chybějící okno a zvuk hry jsou běžná, když WoW není spuštěné.
+Keep the fishing key bindings for next time.
