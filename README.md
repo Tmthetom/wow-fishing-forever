@@ -18,8 +18,27 @@ Clone this fork and follow [AGENTS.md](AGENTS.md), or ask Codex: “Read AGENTS.
 | --- | --- | --- |
 | Fishing | `ú` | **Cast key:** `[` |
 | Interact With Target | `)` | **Interact key:** `]` |
+| Bright Baubles macro | Physical key matching the app's `'` binding | **Lure key:** `'` |
 
-Enter the app values in **Setup** and click **Save keys**. They refer to the same physical keys on the Czech layout. Leave **Lure key** empty unless you use a lure macro. Keep working bindings unchanged between sessions.
+Enter `[`, `]`, and `'` (a single apostrophe) in **Setup**, then click **Save keys**. The app uses US-style names for physical keys; the characters shown by WoW can differ on a Czech layout. Bind the macro to the corresponding physical key and test it manually. Keep working bindings unchanged between sessions.
+
+## Bright Baubles macro
+
+Create this macro in WoW and place it on an action bar:
+
+```text
+#showtooltip Bright Baubles
+/use Bright Baubles
+/use 16
+```
+
+Keep Bright Baubles in your bags and equip the fishing pole in your main hand (slot `16`). Bind the macro to the key configured as **Lure key** `'` in the app. The bot presses it before the first cast and reapplies it at the configured interval. The saved setup uses `lure_minutes = 10.0` and `lure_cast_s = 6.0`; check the item's duration in your client if you change lures. Clear **Lure key** to disable automatic lure use.
+
+## Saved working configuration
+
+[config/forever-working.toml](config/forever-working.toml) is a copy of the working configuration saved on this PC, including the three key bindings, lure timing, and detection settings. To reuse it, close River Desk, back up your existing `.local/state/config/config.toml`, and copy this file to that location.
+
+The saved icon size is `32` px, the icon threshold is `0.66`, and the bite threshold is `0.5`. These values are a starting point for other PCs; repeat calibration for the current display and game setup. The app reads the local configuration, not this reference file.
 
 ## Before every session
 

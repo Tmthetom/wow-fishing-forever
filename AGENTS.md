@@ -19,7 +19,8 @@ Use `uv` instead of `.\.local\uv\uv.exe` if it is already on PATH. Launch `.\Riv
 ## Preserve local settings
 
 - Read `.local/state/config/config.toml` before making changes. Preserve working keys, calibration, and all unrelated values. Copy this file directly when transferring settings between PCs.
-- For a new setup, use **Cast key** `[` and **Interact key** `]` in the app. The corresponding Czech WoW bindings are `ú` and `)`. Leave **Lure key** empty unless requested.
+- The working setup uses **Cast key** `[`, **Interact key** `]`, and **Lure key** `'` (a single apostrophe). The corresponding Czech WoW fishing and interaction bindings are `ú` and `)`. The lure key triggers the Bright Baubles macro documented in README; verify its physical key in WoW.
+- `config/forever-working.toml` is the user's approved configuration snapshot. For a new installation, copy it to `.local/state/config/config.toml` before opening the GUI. For an existing installation, preserve its settings unless the user requests replacement. Recalibrate for the current display; the snapshot's detection settings are not universal defaults.
 - Keep `.local/`, `.venv/`, logs, and machine-specific shortcuts out of Git.
 - The launcher is `RiverDesk.cmd`, its Python entry point is `scripts/river_desk.py`, and key mappings are in `src/wowfish/input/keys.py`.
 
