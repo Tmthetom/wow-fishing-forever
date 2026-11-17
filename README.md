@@ -1,12 +1,12 @@
 # WoW Fishing Forever — úpravy pro Windows
 
-Tento fork přidává vlastní spouštění ze zdrojového kódu na Windows a podporu českých kláves. Původní projekt a jeho úplná dokumentace jsou v [rsamf/wow-fishing-forever](https://github.com/rsamf/wow-fishing-forever). Platí [licence MIT](LICENSE).
+Tento fork přidává vlastní spouštění ze zdrojového kódu na Windows. Původní projekt a jeho úplná dokumentace jsou v [rsamf/wow-fishing-forever](https://github.com/rsamf/wow-fishing-forever). Platí [licence MIT](LICENSE).
 
 ## Co jsme změnili
 
 - `RiverDesk.cmd` spouští aplikaci ze zdrojového kódu v místním Pythonu. `RiverDesk.exe` je název běžícího procesu a `River Desk` titulek okna.
 - Windows spouštěč ukládá nastavení a logy do `.local/state/`. Python, stažené závislosti a nastavení konkrétního počítače zůstávají mimo Git.
-- Aplikace na Windows přijímá klávesy `ú` a `)` z českého rozložení. Návod pro Codex je v [AGENTS.md](AGENTS.md).
+- Návod pro Codex je v [AGENTS.md](AGENTS.md).
 
 ## Instalace na druhém PC
 
@@ -16,10 +16,10 @@ Naklonuj tento fork do místní složky, otevři ji v Codexu a zadej: „Přečt
 
 | Funkce ve WoW | Klávesa | Pole v aplikaci |
 | --- | --- | --- |
-| Fishing na akční liště | `ú` | **Cast key** |
-| Interact With Target | `)` | **Interact key** |
+| Fishing na akční liště | `ú` | **Cast key** `[` |
+| Interact With Target | `)` | **Interact key** `]` |
 
-V aplikaci otevři **Setup**, zadej tyto hodnoty a klikni na **Save keys**. Pokud jsou klávesy ve WoW už přiřazené, ponech je. Na druhém PC je případně nastav jednou a dál je mezi relacemi neměň. Při používání zvol ve Windows české rozložení klávesnice. **Lure key** nech prázdné, pokud nepoužíváš makro na nástrahu.
+Pokud ti nastavení v aplikaci už funguje, ponech ho. Při nové instalaci zadej v **Setup** `[` a `]` a klikni na **Save keys**. Aplikace těmito znaky označuje stejné fyzické klávesy, které na českém rozložení píšou `ú` a `)`. Přiřazení ve WoW nastav jen jednou a mezi relacemi je neměň. **Lure key** nech prázdné, pokud nepoužíváš makro na nástrahu.
 
 ## Před každou relací
 

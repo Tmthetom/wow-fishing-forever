@@ -18,6 +18,6 @@ Pokud už je `uv` v PATH, lze místo `.\.local\uv\uv.exe` použít `uv`. Po inst
 
 ## Nastavení
 
-- V kartě **Setup** nastav na českém rozložení **Cast key** na `ú` a **Interact key** na `)`. Zachovej přiřazení ve WoW. Při ověřování potíží se řiď přípravou a obnovením nastavení v README.
+- Zachovej uživatelovo funkční nastavení kláves. Při nové instalaci použij hodnoty pro kartu **Setup** uvedené v README. Ve WoW zůstává Fishing na `ú` a Interact With Target na `)`.
 - Místní konfigurace je v `.local/state/config/config.toml`. Pokud ji uživatel přenáší, zkopíruj ji přímo mezi počítači. Zachovej ostatní uložené hodnoty. `.local/` a `.venv/` patří mimo Git.
 - Windows spouštěč je `RiverDesk.cmd`, jeho vstup v Pythonu je `scripts/river_desk.py`. Klávesy mapuje `src/wowfish/input/keys.py`.
