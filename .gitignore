@@ -15,6 +15,7 @@ dist/
 
 # Local state
 .env
+.local/
 images/
 
 # Process docs are never committed

@@ -4,6 +4,7 @@ virtual keycodes."""
 from __future__ import annotations
 
 import string
+import sys
 
 _LETTERS = tuple(string.ascii_lowercase)
 _DIGITS = tuple(string.digits)
@@ -64,11 +65,14 @@ _VK_SPECIAL = {
     "`": 0xC0,
     "\\": 0xDC,
 }
+# Unmodified keys on the Czech Windows layout, at the US [ and ] positions.
+WINDOWS_CZECH_KEYS = {"ú": 0xDB, ")": 0xDD}
 VK_CODES: dict[str, int] = {
     **{k: ord(k.upper()) for k in _LETTERS},
     **{k: ord(k) for k in _DIGITS},
     **{f"f{i}": 0x70 + i - 1 for i in range(1, 13)},
     **_VK_SPECIAL,
+    **WINDOWS_CZECH_KEYS,
 }
 
 # macOS virtual keycodes (kVK_ANSI_* and friends in Carbon's Events.h). Like Windows scan codes
@@ -91,4 +95,5 @@ def normalize_key(name: str) -> str:
 
 
 def is_supported_key(name: str) -> bool:
-    return normalize_key(name) in SUPPORTED_KEYS
+    key = normalize_key(name)
+    return key in SUPPORTED_KEYS or (sys.platform == "win32" and key in WINDOWS_CZECH_KEYS)
