@@ -89,6 +89,8 @@ class BehaviorConfig:
     key_hold_jitter_ms: int = 0
     jump_chance: float = 0.0
     jump_key: str = "space"
+    focus_check_minutes: float = 0.0  # Windows only; 0 disables foreground recovery
+    jump_every_minutes: float = 0.0  # jump between casts; 0 disables the timer
 
 
 @dataclass(frozen=True)
@@ -293,6 +295,9 @@ def _validate(path: Path, cfg: Config) -> None:
         "must be 0 or positive and leave run.key_hold_ms - jitter at 10 or more",
     )
     check(is_supported_key(b.jump_key), "behavior.jump_key", "must be a supported key name")
+    for name in ("focus_check_minutes", "jump_every_minutes"):
+        value = getattr(b, name)
+        check(0 <= value <= 1440, f"behavior.{name}", "must be between 0 and 1440")
 
 
 def to_toml(cfg: Config) -> str:

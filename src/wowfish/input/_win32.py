@@ -48,6 +48,16 @@ class Win32InputDevice:
         self._u.MapVirtualKeyW.restype = wintypes.UINT
         self._u.SendInput.argtypes = [wintypes.UINT, ctypes.c_void_p, ctypes.c_int]
         self._u.SendInput.restype = wintypes.UINT
+        self._u.IsWindow.argtypes = [wintypes.HWND]
+        self._u.IsWindow.restype = wintypes.BOOL
+        self._u.IsIconic.argtypes = [wintypes.HWND]
+        self._u.IsIconic.restype = wintypes.BOOL
+        self._u.ShowWindowAsync.argtypes = [wintypes.HWND, ctypes.c_int]
+        self._u.ShowWindowAsync.restype = wintypes.BOOL
+        self._u.SetForegroundWindow.argtypes = [wintypes.HWND]
+        self._u.SetForegroundWindow.restype = wintypes.BOOL
+        self._u.GetWindowThreadProcessId.argtypes = [wintypes.HWND, ctypes.POINTER(wintypes.DWORD)]
+        self._u.GetWindowThreadProcessId.restype = wintypes.DWORD
 
     def close(self) -> None:
         pass
@@ -68,8 +78,22 @@ class Win32InputDevice:
         if not scan:
             raise InputUnavailable(f"key {key!r} (no scan code)")
         self._send(scan, up=False)
-        time.sleep(hold_s)
-        self._send(scan, up=True)
+        try:
+            time.sleep(hold_s)
+        finally:
+            self._send(scan, up=True)
+
+    def focus_game(self, window: WindowRef) -> bool:
+        """Request foreground activation for the same game process; Windows may refuse."""
+        if window.handle is None or window.pid is None or not self._u.IsWindow(window.handle):
+            return False
+        pid = wintypes.DWORD()
+        self._u.GetWindowThreadProcessId(window.handle, ctypes.byref(pid))
+        if pid.value != window.pid:
+            return False  # do not activate a recycled HWND belonging to another process
+        if self._u.IsIconic(window.handle):
+            self._u.ShowWindowAsync(window.handle, 9)  # SW_RESTORE
+        return bool(self._u.SetForegroundWindow(window.handle))
 
     def is_game_focused(self, window: WindowRef) -> bool | None:
         if window.handle is None:

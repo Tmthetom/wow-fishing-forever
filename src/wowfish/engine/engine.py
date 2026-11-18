@@ -116,6 +116,8 @@ class FishingEngine:
         self._last_scores_sent = 0.0
         self._best_heard: tuple[str, float] = ("", -1.0)  # best clip score since the icon was found
         self._lure_at: float | None = None  # when the lure last finished applying
+        self._next_focus_check = math.inf
+        self._next_jump = math.inf
 
     # -- public ------------------------------------------------------------------------------
 
@@ -142,6 +144,10 @@ class FishingEngine:
             self.started = now
             self._last_audio = now
             self.behavior.start(now)
+            if self.cfg.behavior.focus_check_minutes > 0:
+                self._next_focus_check = now + self.cfg.behavior.focus_check_minutes * 60
+            if self.cfg.behavior.jump_every_minutes > 0:
+                self._next_jump = now + self.cfg.behavior.jump_every_minutes * 60
         if self._stop:
             self._finish("user")
             return
@@ -161,6 +167,22 @@ class FishingEngine:
 
     def _step(self, now: float) -> None:
         focused = self.input.is_game_focused(self.window)
+        if now >= self._next_focus_check:
+            self._next_focus_check = now + self.cfg.behavior.focus_check_minutes * 60
+            recover = getattr(self.input, "focus_game", None)
+            if focused is False and recover is not None:
+                recover(self.window)
+                # Focus requests can be asynchronous. Recheck after a short, interruptible wait.
+                self._wait(0.2)
+                if self._stop:
+                    return
+                focused = self.input.is_game_focused(self.window)
+                if focused:
+                    # A popup may have hidden a bite; start a fresh cast, not stale interaction.
+                    self.state = State.IDLE
+                    self._resume_state = State.IDLE
+                    self.detector.reset()
+                    self._emit(ev.Resumed(self._t(), self.state))
         if focused is False:
             if self.state is not State.PAUSED:
                 self._resume_state = self.state
@@ -204,8 +226,10 @@ class FishingEngine:
                 self._sweeping = True  # the window changed size: measure the icon again
             if found is not None:
                 self.window = found
-        if self.behavior.jump():
+        if now >= self._next_jump or self.behavior.jump():
             self._press(self.cfg.behavior.jump_key, "jump")
+            if self.cfg.behavior.jump_every_minutes > 0:
+                self._next_jump = self._clock() + self.cfg.behavior.jump_every_minutes * 60
             self._wait(self._rng.uniform(*JUMP_LANDING_S))
             if self._stop or self.input.is_game_focused(self.window) is False:
                 return  # the next step stops or pauses before anything else is pressed

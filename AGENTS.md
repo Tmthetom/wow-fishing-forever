@@ -23,6 +23,7 @@ Use `uv` instead of `.\.local\uv\uv.exe` if it is already on PATH. Launch `.\Riv
 - `config/forever-working.toml` is the user's approved configuration snapshot. For a new installation, copy it to `.local/state/config/config.toml` before opening the GUI. For an existing installation, preserve its settings unless the user requests replacement. Recalibrate for the current display; the snapshot's detection settings are not universal defaults.
 - Keep `.local/`, `.venv/`, logs, and machine-specific shortcuts out of Git.
 - The launcher is `RiverDesk.cmd`, its Python entry point is `scripts/river_desk.py`, and key mappings are in `src/wowfish/input/keys.py`.
+- Preserve the immutable recovery reference in STABLE.md. New session helpers are separate from that user-verified baseline: `behavior.focus_check_minutes` and `behavior.jump_every_minutes` default to 0. The user selected 1 and 5 minutes respectively for this PC. Do not replace the stable configuration snapshot with the experimental settings.
 
 ## Session workflow
 

@@ -69,3 +69,18 @@ Keep the fishing key bindings for next time.
 ## Known-good version
 
 See [STABLE.md](STABLE.md) for the user-verified baseline, its exact source download, and recovery instructions before trying later changes.
+
+## Optional session helpers (new; not part of the verified baseline)
+
+Close River Desk before editing `.local/state/config/config.toml`. Add these entries to its existing `[behavior]` section, then reopen the app:
+
+```toml
+focus_check_minutes = 1.0
+jump_every_minutes = 5.0
+```
+
+- **Foreground recovery (Windows):** while fishing is running, check once per minute and request that the same WoW window return to the foreground if it lost focus. After recovery, start a fresh cast. Stop the bot before deliberately using another app; it will otherwise try to return to WoW.
+- **Small movement:** jump in place every five minutes, only between casts, and wait to land before casting. The timer is deferred while a fish is on the line. `jump_key` defaults to `space`; no mouse movement is sent.
+- Set either interval to `0` to disable it. Both are disabled in the generic defaults and in the preserved working configuration snapshot. Changes take effect on the next run after loading the settings.
+
+Windows may refuse foreground activation, and an always-on-top popup can still cover the game. The bot stays paused when focus cannot be confirmed; this feature does not close TeamViewer or its dialogs. See [Microsoft's foreground activation rules](https://learn.microsoft.com/en-us/windows/win32/api/winuser/nf-winuser-setforegroundwindow).
