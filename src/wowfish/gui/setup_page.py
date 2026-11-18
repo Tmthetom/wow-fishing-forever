@@ -22,7 +22,7 @@ CHECKLIST = (
     "     /console SoftTargetIconGameObject 1\n"
     "  3. Move River Desk to the side, clear of the bobber. Minimizing alone may not be enough.\n"
     "     Click Calibrate the gear icon, cast manually in WoW, then click Save calibration.\n"
-    "  4. Catch the first fish manually; several catches may be needed for reliable detection.\n"
+    "  4. With Bright Baubles enabled, the verified setup needs no manual starter catches.\n"
     "  5. Press Start on the Fish tab, minimize River Desk, and keep WoW in the foreground.\n"
     "Czech keyboard: use Cast key [ and Interact key ] here; bind Fishing to ú and Interact to )\n"
     "in WoW. After stopping, restore the game settings you changed. Keep the key bindings."

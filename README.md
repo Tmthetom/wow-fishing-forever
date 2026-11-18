@@ -52,7 +52,7 @@ The saved icon size is `32` px, the icon threshold is `0.66`, and the bite thres
 
    Before changing them, you can check their current values with `/dump GetCVar("SoftTargetIconInteract")` and `/dump GetCVar("SoftTargetIconGameObject")`.
 3. **Calibrate every session.** Stand by the water. Move River Desk to the side, clear of the bobber and its gold icon; minimizing alone is not always enough. In **Setup**, click **Calibrate the gear icon**, return to WoW, and cast manually with `ú`. Once the app detects the icon, click **Save calibration**.
-4. **Catch the first fish manually** with `)`. You may need to catch several fish manually before detection works reliably. If the gold icon is missing, cast closer and check the commands above.
+4. **With Bright Baubles enabled, the verified setup works from the first cast without manual starter catches.** If fishing without a lure or troubleshooting detection, try a few manual catches with `)`. If the gold icon is missing, cast closer and check the commands above.
 5. On the **Fish** tab, click **Start**. Keep River Desk positioned to the side, then minimize it and return to WoW. Keep the game in the foreground and the water unobstructed. If detection fails, stop the bot, repeat calibration and the manual catches, then try again.
 
 ## After every session
@@ -65,3 +65,7 @@ Click **Stop**, then close River Desk. Restore any sound, interaction, and loot 
 ```
 
 Keep the fishing key bindings for next time.
+
+## Known-good version
+
+See [STABLE.md](STABLE.md) for the user-verified baseline, its exact source download, and recovery instructions before trying later changes.
