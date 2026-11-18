@@ -3,6 +3,7 @@
 from __future__ import annotations
 
 import gc
+import os
 
 from wowfish import __version__
 from wowfish.gui.fish_page import FishPage
@@ -17,8 +18,9 @@ class App:
         import ttkbootstrap as tb
 
         self.p = presenter or Presenter()
+        title = os.environ.get("WOWFISH_WINDOW_TITLE") or "River Desk"
         self.root = tb.Window(
-            themename="bootstrap-dark", title=f"River Desk {__version__}", minsize=(900, 640)
+            themename="bootstrap-dark", title=f"{title} {__version__}", minsize=(900, 640)
         )
         nb = tb.Notebook(self.root)
         nb.pack(fill="both", expand=True, padx=8, pady=8)

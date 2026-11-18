@@ -10,10 +10,7 @@ if /i "%~1"=="doctor" (
     "%~dp0.venv\Scripts\python.exe" -I -m wowfish doctor
     exit /b
 )
-if not exist "%RIVER_PY%\RiverDesk.exe" (
-    copy /y "%RIVER_PY%\pythonw.exe" "%RIVER_PY%\RiverDesk.exe" >nul || goto missing
-)
-start "" /d "%~dp0." "%RIVER_PY%\RiverDesk.exe" -I "%~dp0scripts\river_desk.py"
+start "" /d "%~dp0." "%RIVER_PY%\pythonw.exe" -I "%~dp0scripts\river_desk.py" --randomize
 exit /b
 
 :missing

@@ -4,13 +4,15 @@ A Windows fork of [rsamf/wow-fishing-forever](https://github.com/rsamf/wow-fishi
 
 ## What this fork changes
 
-- **Local Windows launcher:** `RiverDesk.cmd` runs the source code using a local Python installation. The window is named **River Desk** and the process is `RiverDesk.exe`.
+- **Local Windows launcher:** `RiverDesk.cmd` runs the source code using a local Python installation. Each launch generates a name such as `River-a31f72c084bd` for the window and its `.exe` process. Keep using the existing River Desk shortcut.
 - **Portable setup:** settings and logs stay in `.local/state/`; Python and dependencies also stay inside the project folder. Machine-specific files are excluded from Git.
 - **Practical setup instructions:** Czech keyboard bindings, calibration, and window placement based on use on this PC.
 
 ## Install and launch
 
 Clone this fork and follow [AGENTS.md](AGENTS.md), or ask Codex: “Read AGENTS.md and set up this project on this PC.” Open `RiverDesk.cmd` to launch the app. Run `.\RiverDesk.cmd doctor` from PowerShell for diagnostics; missing game warnings are expected when WoW is closed.
+
+The launcher keeps a small helper process (`pythonw.exe`, or `RiverDesk.exe` with the existing taskbar shortcut) open until the GUI exits, then removes the temporary named executable. Settings and logs stay in the same location. If startup fails, check `.local/state/log/launcher-error.log`. Direct CLI launches keep the standard window title.
 
 ## Set the keys once
 
