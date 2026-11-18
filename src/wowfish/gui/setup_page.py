@@ -22,14 +22,14 @@ CHECKLIST = (
     "     /console SoftTargetIconGameObject 1\n"
     "  3. Move River Desk to the side, clear of the bobber. Minimizing alone may not be enough.\n"
     "     Click Calibrate the gear icon, cast manually in WoW, then click Save calibration.\n"
-    "  4. With Bright Baubles enabled, the verified setup needs no manual starter catches.\n"
+    "  4. Catch a few fish manually before every session, even with Bright Baubles enabled.\n"
     "  5. Press Start on the Fish tab, minimize River Desk, and keep WoW in the foreground.\n"
     "Czech keyboard: use Cast key [ and Interact key ] here; bind Fishing to ú and Interact to )\n"
     "in WoW. After stopping, restore the game settings you changed. Keep the key bindings."
 )
 LURE_HINT = (
-    "Optional. A macro like /use Shiny Bauble + /use 16 that puts a lure on the pole; it is "
-    "pressed before the first cast and again whenever the lure runs out. Empty = no lure."
+    "Optional. Use /use Bright Baubles + /use 16 in a macro. Applied on every Start and "
+    "renewed on a timer; the active buff is not checked. Empty = no lure."
 )
 VERIFY_HINT = "Click, then fish by hand in the game until a fish bites (it records for 60 s)."
 CALIBRATE_HINT = (
@@ -86,6 +86,30 @@ class SetupPage:
         )
         self.limit_note = tb.Label(limit, text="")
         self.limit_note.pack(side="left")
+
+        helpers = tb.Labelframe(f, text="Session helpers (optional)", padding=8)
+        helpers.pack(fill="x", pady=4)
+        tb.Label(helpers, text="Check foreground every (min)").grid(row=0, column=0, sticky="w")
+        self.focus_minutes = tb.Entry(helpers, width=6)
+        self.focus_minutes.grid(row=0, column=1, padx=6)
+        tb.Label(helpers, text="Jump every (min)").grid(row=0, column=2, sticky="w")
+        self.jump_minutes = tb.Entry(helpers, width=6)
+        self.jump_minutes.grid(row=0, column=3, padx=6)
+        for entry, value in (
+            (self.focus_minutes, presenter.cfg.behavior.focus_check_minutes),
+            (self.jump_minutes, presenter.cfg.behavior.jump_every_minutes),
+        ):
+            if value:
+                entry.insert(0, f"{value:g}")
+            entry.bind("<Return>", lambda _e: self._save_helpers())
+        tb.Button(helpers, text="Save timers", command=self._save_helpers).grid(
+            row=0, column=4, padx=6
+        )
+        self.helpers_note = tb.Label(
+            helpers,
+            text="Empty or 0 = off. Jumps happen between casts. Changes apply on next Start.",
+        )
+        self.helpers_note.grid(row=1, column=0, columnspan=5, sticky="w", pady=(4, 0))
 
         audio = tb.Labelframe(f, text="Audio (what the bot hears) and bite check", padding=8)
         audio.pack(fill="x", pady=4)
@@ -171,6 +195,21 @@ class SetupPage:
         quit_key = self.p.cfg.game.quit_key
         then = f"; then the bot presses {quit_key} to quit the game" if quit_key else ""
         self.limit_note.configure(text=f"saved; used from the next Start{then}")
+
+    def _save_helpers(self) -> None:
+        try:
+            self.p.save_session_helpers(self.focus_minutes.get(), self.jump_minutes.get())
+        except ValueError as e:
+            self.helpers_note.configure(text=str(e))
+            return
+        for entry, value in (
+            (self.focus_minutes, self.p.cfg.behavior.focus_check_minutes),
+            (self.jump_minutes, self.p.cfg.behavior.jump_every_minutes),
+        ):
+            entry.delete(0, "end")
+            if value:
+                entry.insert(0, f"{value:g}")
+        self.helpers_note.configure(text="Saved; used from the next Start. Empty = off.")
 
     def _selected_device(self) -> str | None:
         i = self.device.current()

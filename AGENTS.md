@@ -31,6 +31,6 @@ Always include these steps when explaining startup:
 
 1. Prepare the game settings and icon commands listed in README.
 2. Calibrate and save the gear icon before every session. Move River Desk to the side so it cannot cover the bobber or icon; minimizing alone may not be enough.
-3. With Bright Baubles enabled, the user verified reliable startup without manual catches. Manual catches are a troubleshooting step, especially without a lure.
+3. Catch a few fish manually at the start of every session, even with Bright Baubles enabled. Several catches may be needed before starting the bot. This is the user's required startup workflow, not sound training.
 4. Start the bot, minimize the app after positioning it to the side, and keep WoW in the foreground.
 5. After stopping, restore the game settings changed for the session; keep the key bindings.

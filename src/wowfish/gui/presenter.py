@@ -225,6 +225,23 @@ class Presenter:
             save_config(replace(self.cfg, game=replace(self.cfg.game, session_minutes=minutes)))
             self.reload()
 
+    def save_session_helpers(self, focus_minutes: str, jump_minutes: str) -> None:
+        values = []
+        for label, raw in (("Foreground check", focus_minutes), ("Jump", jump_minutes)):
+            try:
+                value = float(raw.strip()) if raw.strip() else 0.0
+            except ValueError:
+                raise ValueError(f"{label}: enter minutes from 0 to 1440, or leave empty") from None
+            if not 0 <= value <= 1440:
+                raise ValueError(f"{label}: enter minutes from 0 to 1440, or leave empty")
+            values.append(value)
+        self.reload()  # preserve calibration and other settings saved since the page opened
+        behavior = replace(
+            self.cfg.behavior, focus_check_minutes=values[0], jump_every_minutes=values[1]
+        )
+        save_config(replace(self.cfg, behavior=behavior))
+        self.reload()
+
     def audio_devices(self) -> list[Any]:
         """The game's own audio first (default), then the loopback monitors.
 

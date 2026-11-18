@@ -34,6 +34,8 @@ Create this macro in WoW and place it on an action bar:
 
 Keep Bright Baubles in your bags and equip the fishing pole in your main hand (slot `16`). Bind the macro to the key configured as **Lure key** `'` in the app. The bot presses it before the first cast and reapplies it at the configured interval. The saved setup uses `lure_minutes = 10.0` and `lure_cast_s = 6.0`; check the item's duration in your client if you change lures. Clear **Lure key** to disable automatic lure use.
 
+Lure use is timer-based: the bot does not check the active buff or whether application succeeded. The 10-minute timer starts after the 6-second application wait; renewal happens between casts. Stopping and starting fishing resets the timer and applies the lure again, even if the previous lure is still active.
+
 ## Saved working configuration
 
 [config/forever-working.toml](config/forever-working.toml) is a copy of the working configuration saved on this PC, including the three key bindings, lure timing, and detection settings. To reuse it, close River Desk, back up your existing `.local/state/config/config.toml`, and copy this file to that location.
@@ -52,7 +54,7 @@ The saved icon size is `32` px, the icon threshold is `0.66`, and the bite thres
 
    Before changing them, you can check their current values with `/dump GetCVar("SoftTargetIconInteract")` and `/dump GetCVar("SoftTargetIconGameObject")`.
 3. **Calibrate every session.** Stand by the water. Move River Desk to the side, clear of the bobber and its gold icon; minimizing alone is not always enough. In **Setup**, click **Calibrate the gear icon**, return to WoW, and cast manually with `ú`. Once the app detects the icon, click **Save calibration**.
-4. **With Bright Baubles enabled, the verified setup works from the first cast without manual starter catches.** If fishing without a lure or troubleshooting detection, try a few manual catches with `)`. If the gold icon is missing, cast closer and check the commands above.
+4. **Catch a few fish manually at the start of every session, even with Bright Baubles enabled.** Use `)` to interact; several catches may be needed before starting the bot. If the gold icon is missing, cast closer and check the commands above.
 5. On the **Fish** tab, click **Start**. Keep River Desk positioned to the side, then minimize it and return to WoW. Keep the game in the foreground and the water unobstructed. If detection fails, stop the bot, repeat calibration and the manual catches, then try again.
 
 ## After every session
@@ -72,15 +74,10 @@ See [STABLE.md](STABLE.md) for the user-verified baseline, its exact source down
 
 ## Optional session helpers (new; not part of the verified baseline)
 
-Close River Desk before editing `.local/state/config/config.toml`. Add these entries to its existing `[behavior]` section, then reopen the app:
-
-```toml
-focus_check_minutes = 1.0
-jump_every_minutes = 5.0
-```
+In **Setup → Session helpers (optional)**, enter **Check foreground every (min)** and **Jump every (min)**, then click **Save timers**. The selected intervals for this PC are 1 and 5 minutes. Leave either field empty (or enter `0`) to disable that function. Saved values appear when you reopen the app; changes apply on the next **Start**.
 
 - **Foreground recovery (Windows):** while fishing is running, check once per minute and request that the same WoW window return to the foreground if it lost focus. After recovery, start a fresh cast. Stop the bot before deliberately using another app; it will otherwise try to return to WoW.
 - **Small movement:** jump in place every five minutes, only between casts, and wait to land before casting. The timer is deferred while a fish is on the line. `jump_key` defaults to `space`; no mouse movement is sent.
-- Set either interval to `0` to disable it. Both are disabled in the generic defaults and in the preserved working configuration snapshot. Changes take effect on the next run after loading the settings.
+- Both are disabled in the generic defaults and in the preserved working configuration snapshot. The settings are stored as `behavior.focus_check_minutes` and `behavior.jump_every_minutes`.
 
 Windows may refuse foreground activation, and an always-on-top popup can still cover the game. The bot stays paused when focus cannot be confirmed; this feature does not close TeamViewer or its dialogs. See [Microsoft's foreground activation rules](https://learn.microsoft.com/en-us/windows/win32/api/winuser/nf-winuser-setforegroundwindow).
