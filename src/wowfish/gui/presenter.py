@@ -169,9 +169,11 @@ class Presenter:
         from wowfish.audio.devices import open_capture as real_open
         from wowfish.capture import find_window as real_find
         from wowfish.capture import get_capturer as real_capturer
+        from wowfish.engine.engine import LureState
         from wowfish.engine.engine import build_engine as real_build
 
         self._build_engine = build_engine or real_build
+        self._lure_state = LureState()
         self._list_devices = list_devices or list_loopback_devices
         self._open_capture = open_capture or real_open
         self._game = GAME
@@ -345,7 +347,7 @@ class Presenter:
         self.reload()
         try:
             session_s = None if minutes is None else minutes * 60
-            engine = self._build_engine(self.cfg, session_s=session_s)
+            engine = self._build_engine(self.cfg, session_s=session_s, lure_state=self._lure_state)
         except Exception as e:
             self._results.put(WorkerFailed("start", str(e)))
             return

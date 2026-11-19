@@ -44,7 +44,9 @@ Create this macro in WoW and place it on an action bar:
 
 Keep Bright Baubles in your bags and equip the fishing pole in your main hand (slot `16`). Bind the macro to the key configured as **Lure key** `'` in the app. The bot presses it before the first cast and reapplies it at the configured interval. The saved setup uses `lure_minutes = 10.0` and `lure_cast_s = 6.0`; check the item's duration in your client if you change lures. Clear **Lure key** to disable automatic lure use.
 
-Lure use is timer-based: the bot does not check the active buff or whether application succeeded. The 10-minute timer starts after the 6-second application wait; renewal happens between casts. Stopping and starting fishing resets the timer and applies the lure again, even if the previous lure is still active.
+Lure use is timer-based: the bot does not check the active buff or whether application succeeded. The 10-minute timer starts after the 6-second application wait; renewal happens between casts. **Stop → Start preserves the timer while the app stays open**, including time spent stopped. An expired lure is renewed on the next run. An application interrupted by Stop is not remembered.
+
+Closing the app resets the timer. Changing the lure key or duration, or starting against a different game process/window, also resets it. After switching characters or fishing poles, or if the macro failed, close and reopen the app to force a fresh application; those changes are not detected automatically.
 
 ## Saved working configuration
 
@@ -99,7 +101,7 @@ The bot finds the bobber icon before listening for a bite. It compares audio aga
 | Area | Status |
 | --- | --- |
 | Original fishing setup | User-verified baseline pinned in [STABLE.md](STABLE.md). |
-| Foreground recovery, scheduled jumps, Setup timers, randomized launch names | Implemented and covered by automated tests; live verification of the new features is still pending. |
+| Foreground recovery, scheduled jumps, Setup timers, randomized launch names | Implemented, covered by automated tests, and confirmed working by the user. See the newer recovery point in [STABLE.md](STABLE.md). |
 | Slow icon acquisition | Logs show some attempts taking about a minute despite a 4-second limit. Synchronous fallback calibration is a suspected cause; a fix is not implemented. |
-| Lure reuse across Stop/Start | Not implemented; every new run still applies the lure again. |
+| Lure reuse across Stop/Start | Implemented for the same open app; automated restart/expiry tests cover it. Live verification is pending. |
 | Portable sharing ZIP | Planned, to be prepared when requested; no distributable build is available yet. |

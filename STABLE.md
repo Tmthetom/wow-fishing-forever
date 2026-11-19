@@ -1,5 +1,11 @@
 # Known-good fishing baseline
 
+## Newer verified recovery point
+
+The user has confirmed that foreground recovery, scheduled jumps, the Setup timers, and randomized window/process names work in the game. The source state before the lure-timer change is pinned at [`a688b38c61256f883511e23f66e3662378cea3e5`](https://github.com/Tmthetom/wow-fishing-forever/tree/a688b38c61256f883511e23f66e3662378cea3e5). [Download that source ZIP](https://github.com/Tmthetom/wow-fishing-forever/archive/a688b38c61256f883511e23f66e3662378cea3e5.zip). This is a source recovery point, not the planned portable package. It still reapplies the lure on every Start.
+
+## Original fishing-only baseline
+
 Confirmed working by the user on 18 November 2026, with Bright Baubles enabled.
 
 - **Immutable source commit:** [`e95dfccc10e4be2d1defbc8ff813b26023c83694`](https://github.com/Tmthetom/wow-fishing-forever/tree/e95dfccc10e4be2d1defbc8ff813b26023c83694).

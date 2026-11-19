@@ -7,7 +7,7 @@ import queue
 import random
 import time
 from collections.abc import Callable
-from dataclasses import replace
+from dataclasses import dataclass, replace
 from pathlib import Path
 from typing import Any
 
@@ -48,6 +48,14 @@ QUIT_TRIES = 3  # quit key presses before giving up on closing the game
 BUSY = (State.CASTING, State.WAIT_BITE, State.INTERACT)  # a cast in hand
 
 
+@dataclass
+class LureState:
+    """Application-local timer shared by successive GUI runs, using one monotonic clock."""
+
+    applied_at: float | None = None
+    settings: tuple[Any, ...] | None = None
+
+
 class FishingEngine:
     def __init__(
         self,
@@ -69,6 +77,7 @@ class FishingEngine:
         session_s: float | None = None,
         box_interval_s: float = 0.25,
         lost_after: int = 3,
+        lure_state: LureState | None = None,
     ) -> None:
         self.cfg = cfg
         self.window = window
@@ -115,7 +124,11 @@ class FishingEngine:
         self._last_listen = 0.0
         self._last_scores_sent = 0.0
         self._best_heard: tuple[str, float] = ("", -1.0)  # best clip score since the icon was found
-        self._lure_at: float | None = None  # when the lure last finished applying
+        self._lure = lure_state if lure_state is not None else LureState()
+        settings = (cfg.game.lure_key, cfg.game.lure_minutes, window.pid, window.handle)
+        if self._lure.settings != settings:
+            self._lure.applied_at = None
+            self._lure.settings = settings
         self._next_focus_check = math.inf
         self._next_jump = math.inf
 
@@ -359,7 +372,10 @@ class FishingEngine:
     def _lure_due(self, now: float) -> bool:
         if not self.cfg.game.lure_key:
             return False
-        return self._lure_at is None or now - self._lure_at >= self.cfg.game.lure_minutes * 60.0
+        return (
+            self._lure.applied_at is None
+            or now - self._lure.applied_at >= self.cfg.game.lure_minutes * 60.0
+        )
 
     def _apply_lure(self) -> None:
         """Press the lure macro and wait out its cast. The bot cannot see the bags or the buff,
@@ -372,7 +388,8 @@ class FishingEngine:
             f"Casting in {wait:g} s; the lure is renewed every {self.cfg.game.lure_minutes:g} min",
         )
         self._wait(wait)
-        self._lure_at = self._clock()
+        if not self._stop and self.input.is_game_focused(self.window) is not False:
+            self._lure.applied_at = self._clock()
 
     # -- helpers -----------------------------------------------------------------------------
 
@@ -611,6 +628,7 @@ def build_engine(
     session_s: float | None = None,
     title: str = "World of Warcraft",
     record_audio: Path | None = None,
+    lure_state: LureState | None = None,
 ) -> FishingEngine:
     """Wire the real capturer, input device, audio source, detector, and matcher for `cfg`.
 
@@ -671,6 +689,7 @@ def build_engine(
         on_calibrated=on_calibrated,
         find_window=lambda t=title: find_window(t),
         session_s=session_s,
+        lure_state=lure_state,
     )
 
 

@@ -28,8 +28,8 @@ CHECKLIST = (
     "in WoW. After stopping, restore the game settings you changed. Keep the key bindings."
 )
 LURE_HINT = (
-    "Optional. Use /use Bright Baubles + /use 16 in a macro. Applied on every Start and "
-    "renewed on a timer; the active buff is not checked. Empty = no lure."
+    "Optional. Use /use Bright Baubles + /use 16 in a macro. Stop/Start keeps the lure timer; "
+    "closing the app resets it. The active buff is not checked. Empty = no lure."
 )
 VERIFY_HINT = "Click, then fish by hand in the game until a fish bites (it records for 60 s)."
 CALIBRATE_HINT = (
