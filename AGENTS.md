@@ -2,6 +2,13 @@
 
 This is a Windows fork of [WoW Fishing Forever](https://github.com/rsamf/wow-fishing-forever), licensed under MIT. Work from the repository root. Keep user-facing instructions in concise English and consistent with [README.md](README.md).
 
+## Documentation maintenance
+
+- Document every significant feature, behavior change, configuration option, workaround, and known limitation in README as part of the same change. Keep the GUI instructions and this file consistent; use concise, grammatical English.
+- Distinguish implemented behavior, automated checks, user-verified behavior, and planned work. Do not describe proposals or untested builds as working releases. Preserve the stable recovery reference.
+- A portable Windows x64 ZIP with bundled Python and dependencies is an agreed future sharing option, not an implemented packaging workflow. Prepare it when requested, from a selected commit with clean defaults and license notices; exclude personal state and logs. Verify relocation and startup on a clean PC before calling it portable. Do not distribute the current virtual environment or machine-specific shortcuts as a ready-made package.
+- Use the connected GitHub MCP for publishing changes. Do not trigger a separate Git Credential Manager sign-in or use `git push` for this workflow.
+
 ## Install on Windows x64
 
 If `uv` is unavailable, download `uv-x86_64-pc-windows-msvc.zip` from the official [Astral uv releases](https://github.com/astral-sh/uv/releases/latest) and extract `uv.exe` into `.local/uv`. Run in PowerShell:

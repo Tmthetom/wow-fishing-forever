@@ -5,7 +5,7 @@ A Windows fork of [rsamf/wow-fishing-forever](https://github.com/rsamf/wow-fishi
 ## What this fork changes
 
 - **Local Windows launcher:** `RiverDesk.cmd` runs the source code using a local Python installation. Each launch generates a name such as `River-a31f72c084bd` for the window and its `.exe` process. Keep using the existing River Desk shortcut.
-- **Portable setup:** settings and logs stay in `.local/state/`; Python and dependencies also stay inside the project folder. Machine-specific files are excluded from Git.
+- **Local setup:** settings and logs stay in `.local/state/`; Python and dependencies also stay inside the project folder. Machine-specific files are excluded from Git. This installation is not yet a ready-to-share portable package.
 - **Practical setup instructions:** Czech keyboard bindings, calibration, and window placement based on use on this PC.
 
 ## Install and launch
@@ -13,6 +13,14 @@ A Windows fork of [rsamf/wow-fishing-forever](https://github.com/rsamf/wow-fishi
 Clone this fork and follow [AGENTS.md](AGENTS.md), or ask Codex: “Read AGENTS.md and set up this project on this PC.” Open `RiverDesk.cmd` to launch the app. Run `.\RiverDesk.cmd doctor` from PowerShell for diagnostics; missing game warnings are expected when WoW is closed.
 
 The launcher keeps a small helper process (`pythonw.exe`, or `RiverDesk.exe` with the existing taskbar shortcut) open until the GUI exits, then removes the temporary named executable. Settings and logs stay in the same location. If startup fails, check `.local/state/log/launcher-error.log`. Direct CLI launches keep the standard window title.
+
+## Sharing with another PC (planned option)
+
+When a distributable build is needed, prepare a **portable Windows x64 ZIP** containing the app, Python, its dependencies, a launcher, and a clean default configuration. The intended workflow is **extract and launch**, with no separate Python installation or dependency download on the recipient's PC. Keep settings and logs inside the extracted folder and preserve the randomized launch names.
+
+**This package has not been built or tested yet.** The GitHub source ZIP is not that package. Do not simply ZIP the current installation: its virtual environment and shortcuts can contain paths specific to this PC. Build from a selected commit, include the license notices, exclude personal logs and local state, and verify startup from a different path on a clean Windows PC before sharing. Record the source commit with the package.
+
+Recipients will still need to configure WoW, check their key bindings, calibrate for their display, and follow the manual starter-catch workflow. Until a portable package is available, use the source installation instructions above.
 
 ## Set the keys once
 
@@ -78,8 +86,20 @@ See [STABLE.md](STABLE.md) for the user-verified baseline, its exact source down
 
 In **Setup → Session helpers (optional)**, enter **Check foreground every (min)** and **Jump every (min)**, then click **Save timers**. The selected intervals for this PC are 1 and 5 minutes. Leave either field empty (or enter `0`) to disable that function. Saved values appear when you reopen the app; changes apply on the next **Start**.
 
-- **Foreground recovery (Windows):** while fishing is running, check once per minute and request that the same WoW window return to the foreground if it lost focus. After recovery, start a fresh cast. Stop the bot before deliberately using another app; it will otherwise try to return to WoW.
-- **Small movement:** jump in place every five minutes, only between casts, and wait to land before casting. The timer is deferred while a fish is on the line. `jump_key` defaults to `space`; no mouse movement is sent.
+- **Foreground recovery (Windows):** while fishing is running, check at the saved interval (1 minute on this PC) and request that the same WoW window return to the foreground if it lost focus. After recovery, start a fresh cast. Stop the bot before deliberately using another app; it will otherwise try to return to WoW.
+- **Small movement:** jump in place at the saved interval (5 minutes on this PC), only between casts, and wait to land before casting. The timer is deferred while a fish is on the line. `jump_key` defaults to `space`; no mouse movement is sent.
 - Both are disabled in the generic defaults and in the preserved working configuration snapshot. The settings are stored as `behavior.focus_check_minutes` and `behavior.jump_every_minutes`.
 
 Windows may refuse foreground activation, and an always-on-top popup can still cover the game. The bot stays paused when focus cannot be confirmed; this feature does not close TeamViewer or its dialogs. See [Microsoft's foreground activation rules](https://learn.microsoft.com/en-us/windows/win32/api/winuser/nf-winuser-setforegroundwindow).
+
+## Detection and current status
+
+The bot finds the bobber icon before listening for a bite. It compares audio against bundled splash recordings; manual catches do not train it. **Setup → Record 60 s and check the bite** can suggest a bite threshold; click **Save** to apply it. Keep other windows clear of the game and inspect `.local/state/log/wowfish.log` when detection fails.
+
+| Area | Status |
+| --- | --- |
+| Original fishing setup | User-verified baseline pinned in [STABLE.md](STABLE.md). |
+| Foreground recovery, scheduled jumps, Setup timers, randomized launch names | Implemented and covered by automated tests; live verification of the new features is still pending. |
+| Slow icon acquisition | Logs show some attempts taking about a minute despite a 4-second limit. Synchronous fallback calibration is a suspected cause; a fix is not implemented. |
+| Lure reuse across Stop/Start | Not implemented; every new run still applies the lure again. |
+| Portable sharing ZIP | Planned, to be prepared when requested; no distributable build is available yet. |
