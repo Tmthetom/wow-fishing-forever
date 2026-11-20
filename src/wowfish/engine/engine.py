@@ -29,6 +29,7 @@ from wowfish.config import Config
 from wowfish.engine import events as ev
 from wowfish.engine.behavior import Behavior
 from wowfish.engine.state import State
+from wowfish.vision.calibrate import CalibrationInterrupted
 from wowfish.vision.matcher import IconMatch
 from wowfish.vision.region import Region
 from wowfish.vision.search import IconSearch
@@ -90,13 +91,12 @@ class FishingEngine:
         self._on_calibrated = on_calibrated or (lambda cal: None)
         self._find_window = find_window
         self.threshold = cfg.vision.icon_threshold
-        # The saved size (if any) is only a first guess: every run measures the icon on its
-        # first cast, since resolution and UI scale change the icon's size on screen.
+        # Give the saved size time to find the newly appearing icon before recalibrating.
         self.matcher = matcher if matcher is not None else None
         if self.matcher is None and cfg.vision.icon_size_px > 0:
             self.matcher = self._matcher_factory(cfg.vision.icon_size_px)
         self.search = IconSearch(self.matcher, self.threshold) if self.matcher else None
-        self._sweeping = True
+        self._sweeping = self.search is None
         self._icon_timeouts = 0
         self._clock = clock
         self._sleep = sleep
@@ -267,27 +267,52 @@ class FishingEngine:
         )
 
     def _acquire(self, now: float) -> None:
+        if self._stop or self._icon_expired():
+            return
         frame = self.capturer.grab()
+        if self._stop or self._icon_expired():
+            return
         if self.search is not None:  # fast path: the saved or last measured size
             _, m = self.search.step(frame)
+            if self._stop or self._icon_expired():
+                return
             if m.accepted(self.threshold):
                 self._icon_timeouts = 0
                 self._sweeping = False
                 self._found(frame, m)
                 return
         if self._sweeping or self.search is None:
-            cal = self._calibrate(frame, match_width=self.cfg.vision.match_width)
+            try:
+                cal = self._calibrate(
+                    frame,
+                    match_width=self.cfg.vision.match_width,
+                    should_stop=lambda: (
+                        self._stop or self._clock() - self._t_cast >= self.cfg.run.icon_timeout_s
+                    ),
+                )
+            except CalibrationInterrupted:
+                if not self._stop:
+                    self._icon_expired()
+                return
+            if self._stop or self._icon_expired():
+                return
             if cal.valid:
                 self._use_calibration(cal)
                 self._icon_timeouts = 0
                 self._found(frame, IconMatch(cal.score, cal.x, cal.y, cal.icon_size_px, cal.gold))
                 return
-        if now - self._t_cast > self.cfg.run.icon_timeout_s:
+        self._icon_expired()
+
+    def _icon_expired(self) -> bool:
+        """Use the current clock, not the timestamp from before capture/matching."""
+        if self._clock() - self._t_cast >= self.cfg.run.icon_timeout_s:
             self._emit(ev.Timeout(self._t(), "icon", self.cfg.run.icon_timeout_s))
             self._icon_timeouts += 1
             if self._icon_timeouts >= RESWEEP_AFTER_TIMEOUTS:
                 self._sweeping = True
             self._miss("No gear icon over the bobber")
+            return True
+        return False
 
     def _use_calibration(self, cal: Any) -> None:
         self.matcher = self._matcher_factory(cal.icon_size_px)
@@ -693,8 +718,12 @@ def build_engine(
     )
 
 
-def _real_calibrate(frame: np.ndarray, *, match_width: int = 1920) -> Any:
+def _real_calibrate(
+    frame: np.ndarray, *, match_width: int = 1920, should_stop: Callable[[], bool] | None = None
+) -> Any:
     from wowfish.vision.calibrate import calibrate_icon_scale
     from wowfish.vision.template import load_icon_templates
 
-    return calibrate_icon_scale(frame, load_icon_templates(), match_width=match_width)
+    return calibrate_icon_scale(
+        frame, load_icon_templates(), match_width=match_width, should_stop=should_stop
+    )

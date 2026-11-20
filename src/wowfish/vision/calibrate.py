@@ -2,7 +2,7 @@
 
 from __future__ import annotations
 
-from collections.abc import Iterable, Sequence
+from collections.abc import Callable, Iterable, Sequence
 from dataclasses import dataclass
 
 import numpy as np
@@ -51,6 +51,10 @@ def _ranked(m: IconMatch) -> float:
     return m.score if m.gold >= GOLD_MIN else NO_MATCH
 
 
+class CalibrationInterrupted(Exception):
+    """The caller's time budget expired or the user requested Stop."""
+
+
 def calibrate_icon_scale(
     frame_bgr: np.ndarray,
     templates: Sequence[IconTemplate],
@@ -59,6 +63,7 @@ def calibrate_icon_scale(
     match_width: int = 1920,
     probe_sizes: Sequence[int] = PROBE_SIZES,
     anchors: int = ANCHORS,
+    should_stop: Callable[[], bool] | None = None,
 ) -> Calibration:
     """Locate candidate spots with a few probe sizes, then sweep every size around each.
 
@@ -75,7 +80,14 @@ def calibrate_icon_scale(
     pad = max(sizes) + 48
 
     def run(side: int, region: Region | None = None) -> IconMatch:
-        return IconMatcher(template_for_size(templates, side), match_width).match(frame_bgr, region)
+        if should_stop is not None and should_stop():
+            raise CalibrationInterrupted
+        result = IconMatcher(template_for_size(templates, side), match_width).match(
+            frame_bgr, region
+        )
+        if should_stop is not None and should_stop():
+            raise CalibrationInterrupted
+        return result
 
     probes = sorted((run(s) for s in probe_sizes), key=_ranked, reverse=True)
     spots: list[tuple[int, int]] = []
@@ -87,7 +99,8 @@ def calibrate_icon_scale(
         if len(spots) == anchors:
             break
     if not spots:
-        spots = [(w // 2, h // 2)]
+        # No gold candidate: sweeping 110 sizes at the frame centre cannot locate a gear.
+        return Calibration(sizes[0], templates[0].native_size, NO_MATCH, -1, -1)
 
     best_side, best, best_key, best_region = sizes[0], None, -np.inf, None
     for ax, ay in spots:

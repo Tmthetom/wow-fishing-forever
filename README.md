@@ -102,6 +102,8 @@ The bot finds the bobber icon before listening for a bite. It compares audio aga
 | --- | --- |
 | Original fishing setup | User-verified baseline pinned in [STABLE.md](STABLE.md). |
 | Foreground recovery, scheduled jumps, Setup timers, randomized launch names | Implemented, covered by automated tests, and confirmed working by the user. See the newer recovery point in [STABLE.md](STABLE.md). |
-| Slow icon acquisition | Logs show some attempts taking about a minute despite a 4-second limit. Synchronous fallback calibration is a suspected cause; a fix is not implemented. |
+| Slow icon acquisition | Fixed in code: saved calibration is tried first; fallback starts after repeated icon timeouts (or when no usable calibration exists). Capture/matching use the current clock, and fallback checks the cast deadline and Stop between template matches. Automated regression tests cover this; live verification is pending. |
 | Lure reuse across Stop/Start | Implemented for the same open app; automated restart/expiry tests cover it. Live verification is pending. |
 | Portable sharing ZIP | Planned, to be prepared when requested; no distributable build is available yet. |
+
+Acquisition previously checked its timeout only after an unrestricted calibration sweep, using an old timestamp. The new checks prevent that full sweep from blocking a cast; one capture or OpenCV match already in progress can still finish after the deadline. If the saved size is wrong, recalibrate in Setup. Manual starter catches remain in the workflow until live tests establish whether they are still needed; the bot does not learn splash sounds from them.
