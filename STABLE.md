@@ -1,6 +1,13 @@
 # Known-good fishing baseline
 
-## Newer verified recovery point
+## Current stable recovery point
+
+The user tested this version in WoW Forever and approved it as the new recovery point. It includes faster bobber icon acquisition and preserves the Bright Baubles timer across Stop → Start while River Desk stays open. Keep the manual starter catches and calibrate before each session.
+
+- [Exact source commit](https://github.com/Tmthetom/wow-fishing-forever/tree/a9984dfec939e8d5a753e1c0cf99554ecebd9c71)
+- [Download the source ZIP](https://github.com/Tmthetom/wow-fishing-forever/archive/a9984dfec939e8d5a753e1c0cf99554ecebd9c71.zip)
+
+## Earlier verified recovery point
 
 The user has confirmed that foreground recovery, scheduled jumps, the Setup timers, and randomized window/process names work in the game. The source state before the lure-timer change is pinned at [`a688b38c61256f883511e23f66e3662378cea3e5`](https://github.com/Tmthetom/wow-fishing-forever/tree/a688b38c61256f883511e23f66e3662378cea3e5). [Download that source ZIP](https://github.com/Tmthetom/wow-fishing-forever/archive/a688b38c61256f883511e23f66e3662378cea3e5.zip). This is a source recovery point, not the planned portable package. It still reapplies the lure on every Start.
 
@@ -14,10 +21,8 @@ Confirmed working by the user on 18 November 2026, with Bright Baubles enabled.
 - Catch a few fish manually at the start of every session, even with Bright Baubles enabled. Several catches may be needed before starting the bot.
 - No automatic focus recovery or scheduled movement is part of this baseline.
 
-## Return to this version
+## Restore a recovery point
 
-Stop and close River Desk. Download the source ZIP into a separate folder, follow that version's AGENTS.md to install its locked dependencies, then copy its `config/forever-working.toml` to `.local/state/config/config.toml` before launching. Keep the current installation and settings as a backup. Only run one bot instance at a time.
+Stop and close River Desk. Extract the selected source ZIP into a separate folder and follow that version's AGENTS.md to install its locked dependencies. Before launching, copy its `config/forever-working.toml` to `.local/state/config/config.toml`. Keep the current installation and settings as a backup. Run one bot instance at a time.
 
-Follow the original README's manual starter catches and calibrate before every session. The earlier claim that a lure removes the need for manual catches was incorrect.
-
-This is a pinned recovery note, not a packaged Windows binary release. Keep this commit reference unchanged when adding new features.
+Follow that version's README for calibration and manual starter catches. The downloads above contain source code and require the setup steps in AGENTS.md.

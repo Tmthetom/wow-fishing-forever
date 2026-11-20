@@ -82,9 +82,9 @@ Keep the fishing key bindings for next time.
 
 ## Known-good version
 
-See [STABLE.md](STABLE.md) for the user-verified baseline, its exact source download, and recovery instructions before trying later changes.
+The current stable version includes the bobber search fix and lure timer reuse across Stop → Start. See [STABLE.md](STABLE.md) for the exact source download, earlier recovery points, and restore instructions.
 
-## Optional session helpers (new; not part of the verified baseline)
+## Optional session helpers
 
 In **Setup → Session helpers (optional)**, enter **Check foreground every (min)** and **Jump every (min)**, then click **Save timers**. The selected intervals for this PC are 1 and 5 minutes. Leave either field empty (or enter `0`) to disable that function. Saved values appear when you reopen the app; changes apply on the next **Start**.
 
@@ -101,9 +101,9 @@ The bot finds the bobber icon before listening for a bite. It compares audio aga
 | Area | Status |
 | --- | --- |
 | Original fishing setup | User-verified baseline pinned in [STABLE.md](STABLE.md). |
-| Foreground recovery, scheduled jumps, Setup timers, randomized launch names | Implemented, covered by automated tests, and confirmed working by the user. See the newer recovery point in [STABLE.md](STABLE.md). |
-| Slow icon acquisition | Fixed in code: saved calibration is tried first; fallback starts after repeated icon timeouts (or when no usable calibration exists). Capture/matching use the current clock, and fallback checks the cast deadline and Stop between template matches. Automated regression tests cover this; live verification is pending. |
-| Lure reuse across Stop/Start | Implemented for the same open app; automated restart/expiry tests cover it. Live verification is pending. |
+| Foreground recovery, scheduled jumps, Setup timers, randomized launch names | Included in the current stable version and verified by the user. |
+| Bobber icon acquisition | Saved calibration is tried first. Fallback starts after repeated icon timeouts or when saved calibration is unavailable. It checks the cast deadline and Stop between template matches. The user tested the fix in game. |
+| Lure reuse across Stop/Start | Included in the current stable version. Automated tests cover restart and expiry while the app stays open. |
 | Portable sharing ZIP | Planned, to be prepared when requested; no distributable build is available yet. |
 
 Acquisition previously checked its timeout only after an unrestricted calibration sweep, using an old timestamp. The new checks prevent that full sweep from blocking a cast; one capture or OpenCV match already in progress can still finish after the deadline. If the saved size is wrong, recalibrate in Setup. Manual starter catches remain in the workflow until live tests establish whether they are still needed; the bot does not learn splash sounds from them.
