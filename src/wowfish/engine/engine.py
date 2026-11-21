@@ -42,6 +42,8 @@ STATS_EVERY_S = 10.0
 LISTEN_EVERY_S = 2.0  # while waiting for the splash, say what is heard this often
 SCORES_EVERY_S = 0.1  # ...and send each clip's peak score this often, for the GUI's graph
 SLEEP_SLICE_S = 0.1
+LOOP_REST_S = 0.02
+MEASURE_AFTER_S = 1.5  # allow the bobber to land before measuring a new size
 RESWEEP_AFTER_TIMEOUTS = 2  # icon timeouts in a row before the next cast measures the icon again
 JUMP_LANDING_S = (1.0, 1.5)  # Fishing cannot be cast mid-air; wait this long after a jump
 QUIT_WAIT_S = 30.0  # away from an inn, /quit counts down 20 s before the game closes
@@ -53,7 +55,7 @@ BUSY = (State.CASTING, State.WAIT_BITE, State.INTERACT)  # a cast in hand
 class LureState:
     """Application-local timer shared by successive GUI runs, using one monotonic clock."""
 
-    applied_at: float | None = None
+    ready_at: float | None = None  # estimated completion of the last macro sent
     settings: tuple[Any, ...] | None = None
 
 
@@ -113,6 +115,7 @@ class FishingEngine:
         self._stop = False
         self._resume_state = State.IDLE
         self._t_cast = 0.0
+        self._before_cast: np.ndarray | None = None
         self._t_interact = 0.0
         self._icon_xy: tuple[int, int] | None = None
         self._icon_size = 0
@@ -127,7 +130,7 @@ class FishingEngine:
         self._lure = lure_state if lure_state is not None else LureState()
         settings = (cfg.game.lure_key, cfg.game.lure_minutes, window.pid, window.handle)
         if self._lure.settings != settings:
-            self._lure.applied_at = None
+            self._lure.ready_at = None
             self._lure.settings = settings
         self._next_focus_check = math.inf
         self._next_jump = math.inf
@@ -143,6 +146,8 @@ class FishingEngine:
             with self.audio:
                 while self.state is not State.STOPPED:
                     self.step()
+                    if not self._stop and self.state not in (State.PAUSED, State.STOPPED):
+                        self._sleep(LOOP_REST_S)
         finally:
             self.capturer.close()
             close_input = getattr(self.input, "close", None)  # e.g. a Wayland virtual keyboard
@@ -230,6 +235,9 @@ class FishingEngine:
         if self._lure_due(now):
             self._apply_lure()
             return  # still IDLE: the next step casts
+        if self._lure.ready_at is not None and now < self._lure.ready_at:
+            self._wait(self._lure.ready_at - now)
+            return  # a previous run sent the macro and the game is still applying it
         if self._find_window is not None:
             found = self._find_window("World of Warcraft")
             if found is not None and (found.width, found.height) != (
@@ -251,6 +259,10 @@ class FishingEngine:
         clear = getattr(self.audio, "clear", None)
         if clear is not None:  # a pause, break, or jump left audio queued; hear this cast live
             clear()
+        self._before_cast = self.capturer.grab().copy() if self._sweeping else None
+        if self._stop or self.input.is_game_focused(self.window) is False:
+            return
+        now = self._clock()
         self._press(key, "cast")
         self.stats = ev.Stats(
             self._t(), self.stats.casts + 1, self.stats.catches, self.stats.misses,
@@ -281,7 +293,7 @@ class FishingEngine:
                 self._sweeping = False
                 self._found(frame, m)
                 return
-        if self._sweeping or self.search is None:
+        if self._sweeping and now - self._t_cast >= MEASURE_AFTER_S:
             try:
                 cal = self._calibrate(
                     frame,
@@ -296,7 +308,10 @@ class FishingEngine:
                 return
             if self._stop or self._icon_expired():
                 return
-            if cal.valid:
+            measured = cal.valid and not self._was_visible_before_cast(frame, cal)
+            if self._stop or self._icon_expired():
+                return
+            if measured:
                 self._use_calibration(cal)
                 self._icon_timeouts = 0
                 self._found(frame, IconMatch(cal.score, cal.x, cal.y, cal.icon_size_px, cal.gold))
@@ -308,11 +323,22 @@ class FishingEngine:
         if self._clock() - self._t_cast >= self.cfg.run.icon_timeout_s:
             self._emit(ev.Timeout(self._t(), "icon", self.cfg.run.icon_timeout_s))
             self._icon_timeouts += 1
+            self._before_cast = None
             if self._icon_timeouts >= RESWEEP_AFTER_TIMEOUTS:
                 self._sweeping = True
             self._miss("No gear icon over the bobber")
             return True
         return False
+
+    def _was_visible_before_cast(self, frame: np.ndarray, cal: Any) -> bool:
+        before = self._before_cast
+        if before is None or before.shape != frame.shape:
+            return False
+        height, width = before.shape[:2]
+        region = Region.around(cal.x, cal.y, width, height)
+        match = self._matcher_factory(cal.icon_size_px).match(before, region)
+        nearby = max(abs(match.x - cal.x), abs(match.y - cal.y)) <= cal.icon_size_px
+        return bool(nearby and match.accepted(cal.suggested_threshold()))
 
     def _use_calibration(self, cal: Any) -> None:
         self.matcher = self._matcher_factory(cal.icon_size_px)
@@ -323,6 +349,7 @@ class FishingEngine:
         self._on_calibrated(cal)
 
     def _found(self, frame: np.ndarray, m: Any) -> None:
+        self._before_cast = None
         self._icon_xy = (m.x, m.y)
         self._icon_size = m.size
         self._misses = 0
@@ -398,8 +425,8 @@ class FishingEngine:
         if not self.cfg.game.lure_key:
             return False
         return (
-            self._lure.applied_at is None
-            or now - self._lure.applied_at >= self.cfg.game.lure_minutes * 60.0
+            self._lure.ready_at is None
+            or now - self._lure.ready_at >= self.cfg.game.lure_minutes * 60.0
         )
 
     def _apply_lure(self) -> None:
@@ -407,14 +434,14 @@ class FishingEngine:
         so the macro does nothing when the lure is missing and this just refreshes on a timer."""
         key, wait = self.cfg.game.lure_key, self.cfg.run.lure_cast_s
         self._press(key, "lure")
+        # Once sent, the game can finish the macro even if the fishing run is stopped.
+        self._lure.ready_at = self._clock() + wait
         self._change(
             State.IDLE,
             f"Pressed {key} to put the lure on the pole",
             f"Casting in {wait:g} s; the lure is renewed every {self.cfg.game.lure_minutes:g} min",
         )
         self._wait(wait)
-        if not self._stop and self.input.is_game_focused(self.window) is not False:
-            self._lure.applied_at = self._clock()
 
     # -- helpers -----------------------------------------------------------------------------
 
@@ -706,7 +733,7 @@ def build_engine(
     return FishingEngine(
         cfg,
         window,
-        capturer=get_capturer(window),
+        capturer=get_capturer(window, own_pixels=cfg.run.window_capture),
         input_device=get_input_device(window),
         audio_source=audio,
         detector=detector,

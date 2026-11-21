@@ -28,32 +28,39 @@ def test_restart_reuses_timer_and_renews_only_after_expiry():
     first = engine(pond, state)
     first.step()
     assert [p[1] for p in pond.pressed] == ["'"]
-    applied = state.applied_at
-    assert applied is not None
+    ready_at = state.ready_at
+    assert ready_at is not None
     first.stop()
-    pond.t = applied + 120
+    pond.t = ready_at + 120
     second = engine(pond, state)
     second.step()
     assert [p[1] for p in pond.pressed] == ["'", "1"]
     second.stop()
-    pond.t = applied + 601
+    pond.t = ready_at + 601
     third = engine(pond, state)
     third.step()
     assert [p[1] for p in pond.pressed] == ["'", "1", "'"]
 
 
-def test_interrupted_application_is_not_remembered():
+def test_repeated_restarts_during_application_send_the_macro_only_once():
     pond, state = _Pond(), LureState()
 
     def stop_during_wait(seconds):
         pond.sleep(seconds)
-        first.stop()
+        current.stop()
 
-    first = engine(pond, state, sleep=stop_during_wait)
-    first.step()
-    assert state.applied_at is None
-    engine(pond, state).step()
-    assert [p[1] for p in pond.pressed] == ["'", "'"]
+    for _ in range(3):
+        current = engine(pond, state, sleep=stop_during_wait)
+        current.step()
+        assert [p[1] for p in pond.pressed] == ["'"]
+        assert not pond.bobber
+
+    resumed = engine(pond, state)
+    resumed.step()
+    assert [p[1] for p in pond.pressed] == ["'"]
+    assert state.ready_at is not None and pond.t >= state.ready_at
+    resumed.step()
+    assert [p[1] for p in pond.pressed] == ["'", "1"]
 
 
 def test_changed_macro_or_game_and_new_app_reset_timer():

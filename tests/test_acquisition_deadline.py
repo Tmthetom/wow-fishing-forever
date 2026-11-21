@@ -5,7 +5,7 @@ import pytest
 
 from test_wowfish import _Pond
 from wowfish.config import AudioConfig, Config, GameConfig, VisionConfig
-from wowfish.engine.engine import FishingEngine
+from wowfish.engine.engine import MEASURE_AFTER_S, FishingEngine
 from wowfish.engine.state import State
 from wowfish.vision import calibrate
 from wowfish.vision.matcher import IconMatch
@@ -72,9 +72,48 @@ def test_fallback_honors_deadline_and_stop(stop):
     engine.step()
     pond.bobber = False
     engine._sweeping = True
+    pond.t += MEASURE_AFTER_S
     engine.step()
     assert engine._icon_timeouts == (0 if stop else 1)
     assert engine.state != State.WAIT_BITE
+
+
+@pytest.mark.parametrize("decoy", [False, True])
+def test_fallback_waits_for_landing_and_rejects_precast_icon(decoy):
+    pond = _Pond()
+    measurements = []
+
+    def measure(frame, **kwargs):
+        measurements.append(pond.t)
+        return calibrate.Calibration(20, 53, 0.9, 5, 5, 1.0, 0.4)
+
+    def grab():
+        return np.full((10, 10, 3), int(decoy or pond.bobber), dtype=np.uint8)
+
+    def match(frame, region=None):
+        return IconMatch(0.9 if frame.any() else 0, 5, 5, 20, 1.0)
+
+    pond.grab = grab
+    pond.match = match
+    engine = FishingEngine(
+        Config(GameConfig(), VisionConfig(), AudioConfig()),
+        pond.window,
+        capturer=pond,
+        input_device=pond,
+        audio_source=pond,
+        detector=pond,
+        matcher_factory=lambda size: pond,
+        calibrate=measure,
+        clock=pond.clock,
+        sleep=pond.sleep,
+    )
+    engine.step()
+    engine.step()
+    assert not measurements
+    pond.t += MEASURE_AFTER_S
+    engine.step()
+    assert len(measurements) == 1
+    assert engine.state == (State.CASTING if decoy else State.WAIT_BITE)
 
 
 def test_calibration_checks_budget_between_matches(monkeypatch):

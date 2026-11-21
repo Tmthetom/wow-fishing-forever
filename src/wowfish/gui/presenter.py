@@ -25,6 +25,7 @@ from wowfish.input import keys
 GAME_TITLE = "World of Warcraft"
 BLOCK = 1024
 CALIBRATE_WATCH_S = 30.0  # how long the calibration keeps grabbing frames for the gear icon
+CALIBRATE_REST_S = 0.1
 
 
 def describe(event: ev.Event) -> str:
@@ -113,7 +114,7 @@ class View:
     state: str
     did: str
     next: str
-    stats: str
+    stats: ev.Stats
     thumbnail_png: bytes | None
     running: bool
     level_dbfs: float
@@ -124,6 +125,7 @@ class View:
     listening: bool = False  # the meter or the bite recording is reading audio
     verify_status: str = ""  # what the bite recording is doing; empty when idle
     calibrate_status: str = ""  # what the calibration is doing; empty when idle
+    catch_times: tuple[float, ...] = ()
 
 
 class _Meter:
@@ -189,7 +191,8 @@ class Presenter:
         self.state = State.IDLE.name
         self.did = "Not started"
         self.next = "Press Start when the game is at the water"
-        self.stats = ev.Stats(0.0).as_line()
+        self.stats = ev.Stats(0.0)
+        self._catch_times: tuple[float, ...] = ()
         self.thumbnail_png: bytes | None = None
         self._before_pause: tuple[str, str, str] | None = None
         self.last_calibration: CalibrateDone | None = None
@@ -243,6 +246,12 @@ class Presenter:
         )
         save_config(replace(self.cfg, behavior=behavior))
         self.reload()
+
+    def save_window_capture(self, enabled: bool) -> None:
+        self.reload()
+        if enabled != self.cfg.run.window_capture:
+            save_config(replace(self.cfg, run=replace(self.cfg.run, window_capture=enabled)))
+            self.reload()
 
     def audio_devices(self) -> list[Any]:
         """The game's own audio first (default), then the loopback monitors.
@@ -356,6 +365,11 @@ class Presenter:
         self.state = State.IDLE.name
         self.did = "Started"
         self.next = "Casting"
+        self.stats = ev.Stats(0.0)
+        self._catch_times = ()
+        self.thumbnail_png = None
+        self.trace = ScoreTrace()
+        self._before_pause = None
 
     def stop(self) -> None:
         if self._thread is not None:
@@ -399,6 +413,7 @@ class Presenter:
             listening=self.meter_running or self._record_level is not None,
             verify_status=self.verify_status,
             calibrate_status=self.calibrate_status,
+            catch_times=self._catch_times,
         )  # fmt: skip
 
     def _add_scores(self, event: ev.Scores) -> None:
@@ -422,7 +437,9 @@ class Presenter:
                 self.trace.timed_out = True
                 self.trace.version += 1
             case ev.Stats():
-                self.stats = event.as_line()
+                self.stats = event
+            case ev.Caught(t=t):
+                self._catch_times += (t,)
             case ev.Paused(reason=reason):
                 self._before_pause = (self.state, self.did, self.next)
                 self.state, self.did, self.next = State.PAUSED.name, f"Paused: {reason}", "Waiting"
@@ -456,6 +473,8 @@ class Presenter:
                     f"Bite check: no bite stood out (everything at most {r.floor:.2f}); try again"
                 )
             case WorkerFailed(what=what, message=message):
+                if what == "start":
+                    self.did = f"Error: {message}"
                 return f"Cannot {what}: {message}"
         return str(item)
 
@@ -476,7 +495,11 @@ class Presenter:
             window = self._find_window("World of Warcraft")
             if window is None:
                 raise RuntimeError("World of Warcraft window not found; is the game running?")
-            cap = self._get_capturer(window)
+            cap = (
+                self._get_capturer(window, own_pixels=True)
+                if self.cfg.run.window_capture
+                else self._get_capturer(window)
+            )
             cap.open(window)
             templates = load_icon_templates()
             deadline = time.monotonic() + CALIBRATE_WATCH_S
@@ -493,6 +516,7 @@ class Presenter:
                     )
                     if cal.valid or time.monotonic() >= deadline:
                         break
+                    time.sleep(CALIBRATE_REST_S)
             finally:
                 cap.close()
             thumb, scale = image.thumbnail(frame)

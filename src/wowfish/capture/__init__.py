@@ -86,7 +86,11 @@ def find_window(title_substring: str = "World of Warcraft") -> WindowRef | None:
     return None
 
 
-def get_capturer(window: WindowRef | None = None) -> Capturer:
+def get_capturer(window: WindowRef | None = None, *, own_pixels: bool = False) -> Capturer:
+    if own_pixels and sys.platform == "win32" and window is not None and window.handle:
+        from wowfish.capture._win32 import Win32WindowCapturer
+
+        return Win32WindowCapturer()
     if window is not None and window.compositor:
         from wowfish.capture._wayland import GrimCapturer
 

@@ -1,10 +1,13 @@
 # WoW Fishing Forever — Windows fork
 
+<img src="src/wowfish/assets/river-desk.png" alt="River Desk icon showing a cork fishing bobber with two feathers" width="96">
+
 A Windows fork of [rsamf/wow-fishing-forever](https://github.com/rsamf/wow-fishing-forever), a World of Warcraft fishing bot that detects the bobber icon and listens for a splash. Licensed under [MIT](LICENSE).
 
 ## What this fork changes
 
 - **Local Windows launcher:** `RiverDesk.cmd` runs the source code using a local Python installation. Each launch generates a name such as `River-a31f72c084bd` for the window and its `.exe` process. Keep using the existing River Desk shortcut.
+- **River Desk icon:** The app uses an original fishing bobber illustration. The [Windows ICO](src/wowfish/assets/river-desk.ico) can also be used for a Windows shortcut.
 - **Local setup:** settings and logs stay in `.local/state/`; Python and dependencies also stay inside the project folder. Machine-specific files are excluded from Git. This installation is not yet a ready-to-share portable package.
 - **Practical setup instructions:** Czech keyboard bindings, calibration, and window placement based on use on this PC.
 
@@ -13,6 +16,8 @@ A Windows fork of [rsamf/wow-fishing-forever](https://github.com/rsamf/wow-fishi
 Clone this fork and follow [AGENTS.md](AGENTS.md), or ask Codex: “Read AGENTS.md and set up this project on this PC.” Open `RiverDesk.cmd` to launch the app. Run `.\RiverDesk.cmd doctor` from PowerShell for diagnostics; missing game warnings are expected when WoW is closed.
 
 The launcher keeps a small helper process (`pythonw.exe`, or `RiverDesk.exe` with the existing taskbar shortcut) open until the GUI exits, then removes the temporary named executable. Settings and logs stay in the same location. If startup fails, check `.local/state/log/launcher-error.log`. Direct CLI launches keep the standard window title.
+
+The app opens on **Fishing**, with **Start**, **Stop**, session totals, and a cumulative catch chart. Each Start begins a new set of session statistics. **Setup** has a scrollable layout with calibration first. **Activity → Logs** shows the local date and time for each entry and includes a copy button. The splash similarity chart and last matched frame are under **Activity → Bite diagnostics**.
 
 ## Sharing with another PC (planned option)
 
@@ -44,7 +49,7 @@ Create this macro in WoW and place it on an action bar:
 
 Keep Bright Baubles in your bags and equip the fishing pole in your main hand (slot `16`). Bind the macro to the key configured as **Lure key** `'` in the app. The bot presses it before the first cast and reapplies it at the configured interval. The saved setup uses `lure_minutes = 10.0` and `lure_cast_s = 6.0`; check the item's duration in your client if you change lures. Clear **Lure key** to disable automatic lure use.
 
-Lure use is timer-based: the bot does not check the active buff or whether application succeeded. The 10-minute timer starts after the 6-second application wait; renewal happens between casts. **Stop → Start preserves the timer while the app stays open**, including time spent stopped. An expired lure is renewed on the next run. An application interrupted by Stop is not remembered.
+Lure use is timer-based: the bot does not check the active buff or whether application succeeded. When it sends the macro, it schedules renewal 10 minutes after the expected end of the 6-second application. **Stop → Start preserves that schedule while the app stays open**, even if you stop during the application wait. If you resume before the wait ends, the bot waits out the remaining time before casting. An expired lure is renewed on the next run.
 
 Closing the app resets the timer. Changing the lure key or duration, or starting against a different game process/window, also resets it. After switching characters or fishing poles, or if the macro failed, close and reopen the app to force a fresh application; those changes are not detected automatically.
 
@@ -67,7 +72,7 @@ The saved icon size is `32` px, the icon threshold is `0.66`, and the bite thres
    Before changing them, you can check their current values with `/dump GetCVar("SoftTargetIconInteract")` and `/dump GetCVar("SoftTargetIconGameObject")`.
 3. **Calibrate every session.** Stand by the water. Move River Desk to the side, clear of the bobber and its gold icon; minimizing alone is not always enough. In **Setup**, click **Calibrate the gear icon**, return to WoW, and cast manually with `ú`. Once the app detects the icon, click **Save calibration**.
 4. **Catch a few fish manually at the start of every session, even with Bright Baubles enabled.** Use `)` to interact; several catches may be needed before starting the bot. If the gold icon is missing, cast closer and check the commands above.
-5. On the **Fish** tab, click **Start**. Keep River Desk positioned to the side, then minimize it and return to WoW. Keep the game in the foreground and the water unobstructed. If detection fails, stop the bot, repeat calibration and the manual catches, then try again.
+5. On the **Fishing** tab, click **Start**. Keep River Desk positioned to the side, then minimize it and return to WoW. Keep the game in the foreground and the water unobstructed. If detection fails, stop the bot, repeat calibration and the manual catches, then try again.
 
 ## After every session
 
@@ -82,17 +87,23 @@ Keep the fishing key bindings for next time.
 
 ## Known-good version
 
-The current stable version includes the bobber search fix and lure timer reuse across Stop → Start. See [STABLE.md](STABLE.md) for the exact source download, earlier recovery points, and restore instructions.
+The current stable version is [v1.1.0](https://github.com/Tmthetom/wow-fishing-forever/releases/tag/v1.1.0). See [STABLE.md](STABLE.md) for source downloads and restore instructions.
 
 ## Optional session helpers
 
-In **Setup → Session helpers (optional)**, enter **Check foreground every (min)** and **Jump every (min)**, then click **Save timers**. The selected intervals for this PC are 1 and 5 minutes. Leave either field empty (or enter `0`) to disable that function. Saved values appear when you reopen the app; changes apply on the next **Start**.
+In **Setup → Session helpers (optional)**, enter **Check foreground (min)** and **Jump every (min)**, then click **Save timers**. The selected intervals for this PC are 1 and 5 minutes. Leave either field empty (or enter `0`) to disable that function. Saved values appear when you reopen the app; changes apply on the next **Start**.
 
 - **Foreground recovery (Windows):** while fishing is running, check at the saved interval (1 minute on this PC) and request that the same WoW window return to the foreground if it lost focus. After recovery, start a fresh cast. Stop the bot before deliberately using another app; it will otherwise try to return to WoW.
 - **Small movement:** jump in place at the saved interval (5 minutes on this PC), only between casts, and wait to land before casting. The timer is deferred while a fish is on the line. `jump_key` defaults to `space`; no mouse movement is sent.
 - Both are disabled in the generic defaults and in the preserved working configuration snapshot. The settings are stored as `behavior.focus_check_minutes` and `behavior.jump_every_minutes`.
 
 Windows may refuse foreground activation, and an always-on-top popup can still cover the game. The bot stays paused when focus cannot be confirmed; this feature does not close TeamViewer or its dialogs. See [Microsoft's foreground activation rules](https://learn.microsoft.com/en-us/windows/win32/api/winuser/nf-winuser-setforegroundwindow).
+
+## Experimental Windows window capture
+
+In **Setup → Session helpers (optional)**, enable **Capture the WoW window directly** to try reading the game's client area when another window covers it. The setting is saved immediately and applies to the next calibration or **Start**. Keep WoW unminimized. Fishing still pauses when WoW loses focus. If direct capture reports an error or the preview is blank or frozen, turn it off and retry. The default is screen capture (`run.window_capture = false`).
+
+To test capture independently of fishing, click **Calibrate the gear icon**, cast manually, and cover part of WoW with another window. Check the calibration preview for game pixels in the covered area. The fishing status **Paused** reports keyboard focus.
 
 ## Detection and current status
 
@@ -102,8 +113,12 @@ The bot finds the bobber icon before listening for a bite. It compares audio aga
 | --- | --- |
 | Original fishing setup | User-verified baseline pinned in [STABLE.md](STABLE.md). |
 | Foreground recovery, scheduled jumps, Setup timers, randomized launch names | Included in the current stable version and verified by the user. |
-| Bobber icon acquisition | Saved calibration is tried first. Fallback starts after repeated icon timeouts or when saved calibration is unavailable. It checks the cast deadline and Stop between template matches. The user tested the fix in game. |
+| Bobber icon acquisition | Saved calibration is tried first. Fallback starts after repeated icon timeouts, a change in window size, or when saved calibration is unavailable. It checks the cast deadline and Stop between template matches. The new fallback waits 1.5 seconds after casting and rejects an icon that also appeared in the same place before the cast. |
 | Lure reuse across Stop/Start | Included in the current stable version. Automated tests cover restart and expiry while the app stays open. |
 | Portable sharing ZIP | Planned, to be prepared when requested; no distributable build is available yet. |
 
 Acquisition previously checked its timeout only after an unrestricted calibration sweep, using an old timestamp. The new checks prevent that full sweep from blocking a cast; one capture or OpenCV match already in progress can still finish after the deadline. If the saved size is wrong, recalibrate in Setup. Manual starter catches remain in the workflow until live tests establish whether they are still needed; the bot does not learn splash sounds from them.
+
+The fishing loop and manual calibration briefly wait between iterations to limit CPU use. The user approved v1.1.0 after testing it in WoW Forever.
+
+To check whether automatic calibration ran, look for **Measured the gear icon** in **Activity → Logs**. A cast that finds the icon using the saved size skips the measurement.

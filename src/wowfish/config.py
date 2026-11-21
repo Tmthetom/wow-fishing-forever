@@ -75,6 +75,7 @@ class RunConfig:
     pause_max_s: float = 2.0
     key_hold_ms: int = 60
     lure_cast_s: float = 6.0
+    window_capture: bool = False
 
 
 @dataclass(frozen=True)

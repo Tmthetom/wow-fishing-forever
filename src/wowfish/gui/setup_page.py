@@ -2,6 +2,8 @@
 
 from __future__ import annotations
 
+import sys
+from tkinter import BooleanVar
 from typing import Any
 
 from wowfish.gui import image
@@ -15,16 +17,14 @@ from wowfish.gui.presenter import (
 )
 
 CHECKLIST = (
-    "Before every session:\n"
-    "  1. Enable Interact Key and Auto Loot. Keep Sound Effects on; set Music and Ambience to 0.\n"
-    "  2. Enter each command separately in the game chat:\n"
-    "     /console SoftTargetIconInteract 1\n"
-    "     /console SoftTargetIconGameObject 1\n"
-    "  3. Move River Desk to the side, clear of the bobber. Minimizing alone may not be enough.\n"
-    "     Click Calibrate the gear icon, cast manually in WoW, then click Save calibration.\n"
-    "  4. Catch a few fish manually before every session, even with Bright Baubles enabled.\n"
-    "  5. Press Start on the Fish tab, minimize River Desk, and keep WoW in the foreground.\n"
-    "Czech keyboard: use Cast key [ and Interact key ] here; bind Fishing to ú and Interact to )\n"
+    "1. Enable Interact Key and Auto Loot. Keep Sound Effects on and mute Music and Ambience.\n"
+    "2. Enter each command separately in the game chat:\n"
+    "    /console SoftTargetIconInteract 1\n"
+    "    /console SoftTargetIconGameObject 1\n"
+    "3. Move River Desk clear of the bobber. Calibrate and save the result.\n"
+    "4. Catch a few fish manually, even with Bright Baubles enabled.\n"
+    "5. Choose Fishing → Start. Minimize River Desk and keep WoW in the foreground.\n"
+    "Czech keyboard: use [ and ] here. Bind Fishing to ú and Interact to ) "
     "in WoW. After stopping, restore the game settings you changed. Keep the key bindings."
 )
 LURE_HINT = (
@@ -40,142 +40,173 @@ CALIBRATE_HINT = (
 class SetupPage:
     def __init__(self, parent: Any, presenter: Presenter) -> None:
         import ttkbootstrap as tb
+        from ttkbootstrap.widgets.scrolled import ScrolledFrame
 
         self.p = presenter
-        self.frame = tb.Frame(parent, padding=10)
-        f = self.frame
-        tb.Label(f, text=CHECKLIST, justify="left").pack(anchor="w", pady=(0, 10))
+        content = ScrolledFrame(parent, padding=12, auto_hide=True)
+        self.frame = content.container
+        self._wrapped: list[Any] = []
 
-        keys_row = tb.Labelframe(f, text="Keys", padding=8)
-        keys_row.pack(fill="x", pady=4)
-        tb.Label(keys_row, text="Cast key").grid(row=0, column=0, sticky="w")
-        self.cast = tb.Entry(keys_row, width=8)
-        self.cast.insert(0, presenter.cfg.game.cast_key)
-        self.cast.grid(row=0, column=1, padx=6)
-        tb.Label(keys_row, text="Interact key").grid(row=0, column=2, sticky="w")
-        self.interact = tb.Entry(keys_row, width=8)
-        self.interact.insert(0, presenter.cfg.game.interact_key)
-        self.interact.grid(row=0, column=3, padx=6)
-        tb.Label(keys_row, text="Quit key").grid(row=0, column=4, sticky="w")
-        self.quit = tb.Entry(keys_row, width=8)
-        self.quit.insert(0, presenter.cfg.game.quit_key)
-        self.quit.grid(row=0, column=5, padx=6)
-        tb.Button(keys_row, text="Save keys", command=self._save_keys, bootstyle="secondary").grid(
-            row=0, column=6, padx=6
+        cal = tb.Labelframe(content, text="Calibration", padding=12)
+        cal.pack(fill="x", pady=(0, 10))
+        size = presenter.cfg.vision.icon_size_px
+        current = f"Saved size: {size} px. " if size > 0 else ""
+        self.cal_note = self._note(cal, current + CALIBRATE_HINT)
+        row = tb.Frame(cal)
+        row.pack(fill="x", pady=(8, 0))
+        self.cal_button = tb.Button(
+            row, text="Calibrate the gear icon", command=self._calibrate, bootstyle="info"
         )
-        self.keys_note = tb.Label(keys_row, text="")
-        self.keys_note.grid(row=0, column=7, sticky="w")
-        tb.Label(keys_row, text="Lure key").grid(row=1, column=0, sticky="w", pady=(6, 0))
-        self.lure = tb.Entry(keys_row, width=8)
-        self.lure.insert(0, presenter.cfg.game.lure_key)
-        self.lure.grid(row=1, column=1, padx=6, pady=(6, 0))
-        tb.Label(keys_row, text=LURE_HINT, wraplength=420, justify="left").grid(
-            row=1, column=2, columnspan=6, sticky="w", pady=(6, 0)
-        )
+        self.cal_button.pack(side="left")
+        self.save_cal = tb.Button(
+            row, text="Save calibration", command=self._save_cal, bootstyle="success",
+            state="disabled",
+        )  # fmt: skip
+        self.save_cal.pack(side="left", padx=(8, 0))
+        self.preview = image.Preview(cal, height=246)
 
-        limit = tb.Labelframe(f, text="Time limit", padding=8)
-        limit.pack(fill="x", pady=4)
-        tb.Label(limit, text="Stop after").pack(side="left")
-        self.minutes = tb.Spinbox(limit, from_=0, to=1440, increment=15, width=5)
-        self.minutes.set(presenter.cfg.game.session_minutes)
-        self.minutes.pack(side="left", padx=6)
-        self.minutes.bind("<Return>", lambda _e: self._save_limit())
-        tb.Label(limit, text="min (0 = never)").pack(side="left")
-        tb.Button(limit, text="Save", command=self._save_limit, bootstyle="secondary").pack(
-            side="left", padx=6
-        )
-        self.limit_note = tb.Label(limit, text="")
-        self.limit_note.pack(side="left")
+        checklist = tb.Labelframe(content, text="Before fishing", padding=12)
+        checklist.pack(fill="x", pady=(0, 10))
+        instructions = self._note(checklist, CHECKLIST)
+        instructions.pack_forget()
 
-        helpers = tb.Labelframe(f, text="Session helpers (optional)", padding=8)
-        helpers.pack(fill="x", pady=4)
-        tb.Label(helpers, text="Check foreground every (min)").grid(row=0, column=0, sticky="w")
-        self.focus_minutes = tb.Entry(helpers, width=6)
-        self.focus_minutes.grid(row=0, column=1, padx=6)
-        tb.Label(helpers, text="Jump every (min)").grid(row=0, column=2, sticky="w")
-        self.jump_minutes = tb.Entry(helpers, width=6)
-        self.jump_minutes.grid(row=0, column=3, padx=6)
-        for entry, value in (
-            (self.focus_minutes, presenter.cfg.behavior.focus_check_minutes),
-            (self.jump_minutes, presenter.cfg.behavior.jump_every_minutes),
-        ):
-            if value:
-                entry.insert(0, f"{value:g}")
-            entry.bind("<Return>", lambda _e: self._save_helpers())
-        tb.Button(helpers, text="Save timers", command=self._save_helpers).grid(
-            row=0, column=4, padx=6
-        )
-        self.helpers_note = tb.Label(
-            helpers,
-            text="Empty or 0 = off. Jumps happen between casts. Changes apply on next Start.",
-        )
-        self.helpers_note.grid(row=1, column=0, columnspan=5, sticky="w", pady=(4, 0))
+        def toggle_checklist() -> None:
+            is_visible = instructions.winfo_manager() == "pack"
+            if is_visible:
+                instructions.pack_forget()
+            else:
+                instructions.pack(fill="x", pady=(8, 0))
+            checklist_button.configure(text="Show checklist" if is_visible else "Hide checklist")
 
-        audio = tb.Labelframe(f, text="Audio (what the bot hears) and bite check", padding=8)
-        audio.pack(fill="x", pady=4)
+        checklist_button = tb.Button(
+            checklist, text="Show checklist", command=toggle_checklist, bootstyle="secondary"
+        )
+        checklist_button.pack(anchor="w")
+
+        bindings = tb.Labelframe(content, text="Key bindings", padding=12)
+        bindings.pack(fill="x", pady=(0, 10))
+        keys = tb.Frame(bindings)
+        keys.pack(fill="x")
+        game = presenter.cfg.game
+        self.cast = self._entry(keys, 0, "Cast key", game.cast_key)
+        self.interact = self._entry(keys, 1, "Interact key", game.interact_key)
+        self.lure = self._entry(keys, 2, "Lure key (optional)", game.lure_key)
+        self.quit = self._entry(keys, 3, "Quit key (optional)", game.quit_key)
+        self._note(bindings, LURE_HINT, pady=6)
+        tb.Button(bindings, text="Save keys", command=self._save_keys, bootstyle="secondary").pack(
+            anchor="w"
+        )
+        self.keys_note = self._note(bindings, "")
+
+        helpers = tb.Labelframe(content, text="Session helpers (optional)", padding=12)
+        helpers.pack(fill="x", pady=(0, 10))
+        timers = tb.Frame(helpers)
+        timers.pack(fill="x")
+        behavior = presenter.cfg.behavior
+        self.focus_minutes = self._entry(
+            timers, 0, "Check foreground (min)",
+            f"{behavior.focus_check_minutes:g}" if behavior.focus_check_minutes else "",
+        )  # fmt: skip
+        self.jump_minutes = self._entry(
+            timers, 1, "Jump every (min)",
+            f"{behavior.jump_every_minutes:g}" if behavior.jump_every_minutes else "",
+        )  # fmt: skip
+        for entry in (self.focus_minutes, self.jump_minutes):
+            entry.bind("<Return>", lambda _event: self._save_helpers())
+        tb.Button(helpers, text="Save timers", command=self._save_helpers).pack(anchor="w", pady=4)
+        self.helpers_note = self._note(helpers, "Empty or 0 turns a timer off. Applies on Start.")
+
+        limit = tb.Frame(helpers)
+        limit.pack(fill="x", pady=(10, 0))
+        tb.Label(limit, text="Stop after (min)").grid(row=0, column=0, sticky="w")
+        self.minutes = tb.Spinbox(limit, from_=0, to=1440, increment=15, width=6)
+        self.minutes.set(game.session_minutes)
+        self.minutes.grid(row=0, column=1, padx=8)
+        self.minutes.bind("<Return>", lambda _event: self._save_limit())
+        tb.Button(limit, text="Save limit", command=self._save_limit, bootstyle="secondary").grid(
+            row=0, column=2
+        )
+        self.limit_note = self._note(helpers, "0 keeps fishing until you press Stop.")
+
+        if sys.platform == "win32":
+            self.window_capture = BooleanVar(master=content, value=presenter.cfg.run.window_capture)
+            tb.Checkbutton(
+                helpers,
+                text="Capture the WoW window directly",
+                variable=self.window_capture,
+                command=lambda: self.p.save_window_capture(self.window_capture.get()),
+            ).pack(anchor="w", pady=(10, 0))
+
+        audio = tb.Labelframe(content, text="Audio diagnostics", padding=12)
+        audio.pack(fill="x")
         self.devices = presenter.audio_devices()
-        names = [d.name for d in self.devices]
-        self.device = tb.Combobox(audio, values=names, state="readonly", width=48)
+        self.device = tb.Combobox(
+            audio, values=[device.name for device in self.devices], state="readonly", width=18
+        )
+        self.device.pack(fill="x")
         current = presenter.cfg.audio.device
-        pick = next(
-            (i for i, d in enumerate(self.devices) if current and current in (d.id, d.name)), None
+        pick = (
+            next(
+                (i for i, device in enumerate(self.devices) if current in (device.id, device.name)),
+                None,
+            )
+            if current
+            else None
         )
         if pick is None:
             default = presenter.default_device()
             pick = self.devices.index(default) if default in self.devices else None
         if pick is not None:
             self.device.current(pick)
-        self.device.grid(row=0, column=0, columnspan=3, sticky="w")
         tb.Button(
             audio, text="Use this and listen", command=self._save_device, bootstyle="secondary"
-        ).grid(row=0, column=3, padx=6)
-        tb.Label(audio, text="Level").grid(row=1, column=0, sticky="w", pady=(8, 0))
-        self.meter = tb.Progressbar(audio, maximum=100, value=0, bootstyle="info", length=300)
-        self.meter.grid(row=1, column=1, columnspan=2, sticky="w", pady=(8, 0))
-        self.level_text = tb.Label(audio, text="")
+        ).pack(anchor="w", pady=6)
+        self.meter = tb.Progressbar(audio, maximum=100, value=0, bootstyle="info")
+        self.meter.pack(fill="x")
+        self.level_text = self._note(audio, "")
         self._meter_error = ""
-        self.level_text.grid(row=1, column=3, sticky="w", padx=6, pady=(8, 0))
         self.verify_button = tb.Button(
             audio, text="Record 60 s and check the bite", command=self._verify, bootstyle="info"
         )
-        self.verify_button.grid(row=2, column=0, sticky="w", pady=(8, 0))
+        self.verify_button.pack(anchor="w", pady=(10, 4))
         self._meter_was_on = False
-        self.verify_note = tb.Label(audio, text=VERIFY_HINT, wraplength=560, justify="left")
-        self.verify_note.grid(row=2, column=1, columnspan=3, sticky="w", padx=6, pady=(8, 0))
+        self.verify_note = self._note(audio, VERIFY_HINT)
         bite_row = tb.Frame(audio)
-        bite_row.grid(row=3, column=0, columnspan=4, sticky="w", pady=(8, 0))
-        tb.Label(bite_row, text="Bite threshold").pack(side="left")
-        self.bite = tb.Entry(bite_row, width=6)
-        self.bite.insert(0, f"{presenter.cfg.audio.bite_threshold:.2f}")
-        self.bite.pack(side="left", padx=6)
-        self.bite.bind("<Return>", lambda _e: self._save_bite())
-        tb.Button(bite_row, text="Save", command=self._save_bite, bootstyle="success").pack(
-            side="left"
+        bite_row.pack(fill="x", pady=(10, 4))
+        self.bite = self._entry(
+            bite_row, 0, "Bite threshold", f"{presenter.cfg.audio.bite_threshold:.2f}"
         )
-        self.bite_note = tb.Label(bite_row, text="A splash must score at least this to count.")
-        self.bite_note.pack(side="left", padx=6)
+        self.bite.bind("<Return>", lambda _event: self._save_bite())
+        tb.Button(bite_row, text="Save", command=self._save_bite, bootstyle="secondary").grid(
+            row=0, column=2
+        )
+        self.bite_note = self._note(audio, "Minimum audio score required to detect a bite.")
 
-        cal = tb.Labelframe(f, text="Icon calibration (what the bot looks for)", padding=8)
-        cal.pack(fill="both", expand=True, pady=4)
-        self.cal_button = tb.Button(
-            cal, text="Calibrate the gear icon", command=self._calibrate, bootstyle="info"
-        )
-        self.cal_button.grid(row=0, column=0, sticky="w")
-        size = presenter.cfg.vision.icon_size_px
-        current = f"Saved: {size} px. " if size > 0 else "Not calibrated yet. "
-        self.cal_note = tb.Label(cal, text=current + CALIBRATE_HINT, wraplength=560, justify="left")
-        self.cal_note.grid(row=0, column=1, sticky="w", padx=6)
-        self.save_cal = tb.Button(
-            cal,
-            text="Save calibration",
-            command=self._save_cal,
-            bootstyle="success",
-            state="disabled",
-        )
-        self.save_cal.grid(row=0, column=2, padx=6)
-        self.cal_image = tb.Label(cal)
-        self.cal_image.grid(row=1, column=0, columnspan=3, pady=(8, 0), sticky="w")
-        self._photo = None
+        content.bind("<Configure>", self._reflow, add="+")
+
+    def _note(self, parent: Any, text: str, pady: int = 0) -> Any:
+        import ttkbootstrap as tb
+
+        label = tb.Label(parent, text=text, justify="left", wraplength=315)
+        label.pack(fill="x", pady=pady)
+        self._wrapped.append(label)
+        return label
+
+    def _reflow(self, event: Any) -> None:
+        width = max(100, event.width - 58)
+        for label in self._wrapped:
+            if int(label.cget("wraplength")) != width:
+                label.configure(wraplength=width)
+
+    @staticmethod
+    def _entry(parent: Any, row: int, text: str, value: str) -> Any:
+        import ttkbootstrap as tb
+
+        tb.Label(parent, text=text).grid(row=row, column=0, sticky="w", pady=3)
+        entry = tb.Entry(parent, width=7)
+        entry.insert(0, value)
+        entry.grid(row=row, column=1, padx=8, pady=3, sticky="w")
+        return entry
 
     # -- actions ----------------------------------------------------------------------------
 
@@ -233,6 +264,8 @@ class SetupPage:
         self.cal_button.configure(state="disabled")
         self.save_cal.configure(state="disabled")
         self.cal_note.configure(text="Starting...")
+        self.preview.frame.pack_forget()
+        self.preview.show(None)
         self.p.grab_and_calibrate()
 
     def _save_bite(self) -> None:
@@ -245,7 +278,8 @@ class SetupPage:
 
     def _save_cal(self) -> None:
         self.p.save_calibration()
-        self.cal_note.configure(text=self.cal_note.cget("text") + "  (saved)")
+        self.cal_note.configure(text=f"Calibration saved at {self.p.cfg.vision.icon_size_px} px.")
+        self.save_cal.configure(state="disabled")
 
     # -- rendering --------------------------------------------------------------------------
 
@@ -268,8 +302,8 @@ class SetupPage:
         for item, line in zip(view.log_events, view.new_lines, strict=True):
             match item:
                 case CalibrateDone(calibration=cal):
-                    self._photo = image.photo_from_png(item.thumbnail_png)
-                    self.cal_image.configure(image=self._photo)
+                    self.preview.frame.pack(fill="x", pady=(8, 0))
+                    self.preview.show(item.thumbnail_png)
                     if cal.valid:
                         self.cal_note.configure(
                             text=f"Found it: {cal.icon_size_px} px, score {cal.score:.2f}. "
