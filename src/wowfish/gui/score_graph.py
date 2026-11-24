@@ -1,4 +1,4 @@
-"""The Fish tab's Scores graph: each splash clip's score over the current cast, on a Tk canvas."""
+"""The diagnostics chart: similarity to each reference splash during the current cast."""
 
 from __future__ import annotations
 
@@ -11,6 +11,12 @@ from wowfish.gui.presenter import ScoreTrace
 # surface (all checks pass; worst adjacent colour-blind separation dE 8.4, inside the band that
 # needs names on screen too), so the legend and the hover readout always name the clips.
 CLIP_COLORS = dict(zip(CLIP_NAMES, ("#3987e5", "#d95926", "#199e70", "#c98500"), strict=True))
+CLIP_LABELS = {
+    "fishingbobber_1": "Splash sample 1",
+    "fishingbobber_2": "Splash sample 2",
+    "fishingbobber_3": "Splash sample 3",
+    "fishbite": "Bite sample",
+}
 SURFACE = "#212529"  # bootstrap-dark background
 GRID = "#45484b"
 MUTED = "#bdc4ca"
@@ -93,11 +99,12 @@ class ScoreGraph:
         c = self.canvas
         x, y = float(GAP), GAP + self._lh / 2
         for name in CLIP_NAMES:
-            item_w = SWATCH + GAP + self._font.measure(name)
+            label = CLIP_LABELS[name]
+            item_w = SWATCH + GAP + self._font.measure(label)
             if x > GAP and x + item_w > width - GAP:
                 x, y = float(GAP), y + self._lh
             c.create_line(x, y, x + SWATCH, y, fill=CLIP_COLORS[name], width=3)
-            c.create_text(x + SWATCH + GAP, y, text=name, anchor="w", fill=TEXT, font=FONT)
+            c.create_text(x + SWATCH + GAP, y, text=label, anchor="w", fill=TEXT, font=FONT)
             x += item_w + 3 * GAP
         return int(y + self._lh / 2)
 
@@ -146,7 +153,7 @@ class ScoreGraph:
             right = x > (x0 + x1) / 2  # keep the label inside the plot
             self.canvas.create_text(
                 x - GAP if right else x + GAP, y0, anchor="ne" if right else "nw",
-                text=f"bite {score:.2f} {clip}", fill=TEXT, font=FONT,
+                text=f"bite {score:.2f} · {CLIP_LABELS.get(clip, clip)}", fill=TEXT, font=FONT,
             )  # fmt: skip
         elif tr.timed_out:
             self.canvas.create_text(
@@ -171,7 +178,7 @@ class ScoreGraph:
         c.create_line(x, y0, x, y1, fill=MUTED, dash=(2, 2), tags="hover")
         rows = sorted(peaks.items(), key=lambda kv: -kv[1])
         lines = [(None, f"{pt - tr.t0:.1f} s")] + [
-            (name, f"{name}  {max(s, 0.0):.2f}{' (silent)' if s <= SILENT else ''}")
+            (name, f"{CLIP_LABELS[name]}  {max(s, 0.0):.2f}{' (silent)' if s <= SILENT else ''}")
             for name, s in rows
         ]
         box_w = SWATCH + 3 * GAP + max(self._font.measure(text) for _, text in lines)

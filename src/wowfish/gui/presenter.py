@@ -4,22 +4,26 @@ engine thread and the setup workers (meter, calibration grab, bite recording). N
 from __future__ import annotations
 
 import queue
+import sqlite3
 import sys
 import threading
 import time
 from collections.abc import Callable
 from dataclasses import dataclass, field, replace
+from datetime import date, datetime
 from typing import Any
 
 import numpy as np
 from loguru import logger
 
+from wowfish import paths
 from wowfish.audio import AudioChunk, AudioUnavailable
 from wowfish.config import Config, load_config, save_config
 from wowfish.engine import events as ev
 from wowfish.engine.state import State
 from wowfish.engine.thread import EngineThread
 from wowfish.gui import image
+from wowfish.gui.catch_history import CatchHistory
 from wowfish.input import keys
 
 GAME_TITLE = "World of Warcraft"
@@ -125,7 +129,10 @@ class View:
     listening: bool = False  # the meter or the bite recording is reading audio
     verify_status: str = ""  # what the bite recording is doing; empty when idle
     calibrate_status: str = ""  # what the calibration is doing; empty when idle
-    catch_times: tuple[float, ...] = ()
+    daily_catches: tuple[tuple[date, int], ...] = ()
+    started_at: datetime | None = None
+    stopped_at: datetime | None = None
+    last_catch_at: datetime | None = None
 
 
 class _Meter:
@@ -192,7 +199,11 @@ class Presenter:
         self.did = "Not started"
         self.next = "Press Start when the game is at the water"
         self.stats = ev.Stats(0.0)
-        self._catch_times: tuple[float, ...] = ()
+        self._daily_catches: tuple[tuple[date, int], ...] = ()
+        self._history_day: date | None = None
+        self._started_at: datetime | None = None
+        self._stopped_at: datetime | None = None
+        self._last_catch_at: datetime | None = None
         self.thumbnail_png: bytes | None = None
         self._before_pause: tuple[str, str, str] | None = None
         self.last_calibration: CalibrateDone | None = None
@@ -361,12 +372,14 @@ class Presenter:
             self._results.put(WorkerFailed("start", str(e)))
             return
         self._thread = EngineThread(engine)
+        self._started_at = datetime.now()
+        self._stopped_at = None
+        self._last_catch_at = None
         self._thread.start()
         self.state = State.IDLE.name
         self.did = "Started"
         self.next = "Casting"
         self.stats = ev.Stats(0.0)
-        self._catch_times = ()
         self.thumbnail_png = None
         self.trace = ScoreTrace()
         self._before_pause = None
@@ -379,6 +392,7 @@ class Presenter:
         self.stop_meter()
         if self._thread is not None:
             self._thread.stop(timeout=3.0)
+            self.poll()  # process catches queued just before closing
             self._thread = None
 
     def poll(self) -> View:
@@ -407,13 +421,25 @@ class Presenter:
                 break
             items.append(item)
             lines.append(self._describe_result(item))
+        today = date.today()
+        if today != self._history_day:
+            self._history_day = today
+            try:
+                self._daily_catches = CatchHistory(paths.log_dir() / "catches.sqlite3").recent(
+                    today
+                )
+            except (OSError, sqlite3.Error) as error:
+                logger.warning("Cannot read catch history: {}", error)
         return View(
             self.state, self.did, self.next, self.stats, self.thumbnail_png, self.running,
             self.level_dbfs, self.last_scores, lines, items, self.trace,
             listening=self.meter_running or self._record_level is not None,
             verify_status=self.verify_status,
             calibrate_status=self.calibrate_status,
-            catch_times=self._catch_times,
+            daily_catches=self._daily_catches,
+            started_at=self._started_at,
+            stopped_at=self._stopped_at,
+            last_catch_at=self._last_catch_at,
         )  # fmt: skip
 
     def _add_scores(self, event: ev.Scores) -> None:
@@ -438,8 +464,13 @@ class Presenter:
                 self.trace.version += 1
             case ev.Stats():
                 self.stats = event
-            case ev.Caught(t=t):
-                self._catch_times += (t,)
+            case ev.Caught(at=at):
+                self._last_catch_at = at
+                self._history_day = None
+                try:
+                    CatchHistory(paths.log_dir() / "catches.sqlite3").record(at.date())
+                except (OSError, sqlite3.Error) as error:
+                    logger.warning("Cannot save catch history: {}", error)
             case ev.Paused(reason=reason):
                 self._before_pause = (self.state, self.did, self.next)
                 self.state, self.did, self.next = State.PAUSED.name, f"Paused: {reason}", "Waiting"
@@ -449,8 +480,11 @@ class Presenter:
                 else:
                     self.state, self.did, self.next = state.name, "Resumed", "Carrying on"
                 self._before_pause = None
-            case ev.Stopped(reason=reason):
-                self.state, self.did, self.next = State.STOPPED.name, f"Stopped ({reason})", "Idle"
+            case ev.Stopped(reason=reason, at=at):
+                self._stopped_at = at
+                self.state, self.next = State.STOPPED.name, "Idle"
+                if reason != "error" or not self.did.startswith("Error:"):
+                    self.did = f"Stopped ({reason})"
             case ev.Error(message=message):
                 self.did = f"Error: {message}"
 

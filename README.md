@@ -17,7 +17,13 @@ Clone this fork and follow [AGENTS.md](AGENTS.md), or ask Codex: “Read AGENTS.
 
 The launcher keeps a small helper process (`pythonw.exe`, or `RiverDesk.exe` with the existing taskbar shortcut) open until the GUI exits, then removes the temporary named executable. Settings and logs stay in the same location. If startup fails, check `.local/state/log/launcher-error.log`. Direct CLI launches keep the standard window title.
 
-The app opens on **Fishing**, with **Start**, **Stop**, session totals, and a cumulative catch chart. Each Start begins a new set of session statistics. **Setup** has a scrollable layout with calibration first. **Activity → Logs** shows the local date and time for each entry and includes a copy button. The splash similarity chart and last matched frame are under **Activity → Bite diagnostics**.
+The app opens on **Fishing** with Start, Stop, session totals, and local start and stop times for the current or most recent run. Stop times come from the bot's own stop events. A game logout that leaves the client open has no dedicated detection.
+
+**Catches / hour** estimates the session's average after the first minute. **Since last catch** shows the time since the session's latest catch, and holds the value when the session stops. Both metrics start fresh on Start.
+
+**Catches by day** shows the last 14 calendar days, including today. Hover over a bar for its date and count. Daily totals are saved for GUI sessions in `.local/state/log/catches.sqlite3` and survive restarts. The chart starts collecting data when this feature is installed.
+
+**Setup** has a scrollable layout with calibration first. **Activity → Logs** shows the local date and time for each entry and includes a copy button. **Activity → Bite diagnostics** shows the last matched frame and the similarity to four reference sounds. Blue, orange, and green are splash samples 1–3. Amber is the extra bite sample. The horizontal dashed line is the detection threshold. The vertical marker labeled **bite** is when the detector registered a bite.
 
 ## Sharing with another PC (planned option)
 
@@ -87,7 +93,7 @@ Keep the fishing key bindings for next time.
 
 ## Known-good version
 
-The current stable version is [v1.1.0](https://github.com/Tmthetom/wow-fishing-forever/releases/tag/v1.1.0). See [STABLE.md](STABLE.md) for source downloads and restore instructions.
+The current stable version is [v1.2.0](https://github.com/Tmthetom/wow-fishing-forever/releases/tag/v1.2.0). See [STABLE.md](STABLE.md) for source downloads and restore instructions.
 
 ## Optional session helpers
 

@@ -35,8 +35,9 @@ class ActivityPage:
         tabs.add(diagnostics.container, text="Bite diagnostics")
         hint = tb.Label(
             diagnostics,
-            text="Lines show how closely the sound matches each splash. The dashed line is "
-            "the score needed to detect a bite.",
+            text="Each color is a reference sound. Higher scores mean a closer match. "
+            "The horizontal dashed line marks the bite threshold. A vertical marker "
+            "labeled “bite” shows when one was detected.",
             justify="left",
         )
         hint.pack(fill="x", pady=(0, 8))

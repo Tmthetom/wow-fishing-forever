@@ -2,7 +2,8 @@
 
 from __future__ import annotations
 
-from dataclasses import dataclass
+from dataclasses import dataclass, field
+from datetime import datetime
 
 import numpy as np
 
@@ -55,7 +56,7 @@ class KeyPressed(Event):
 
 @dataclass(frozen=True)
 class Caught(Event):
-    pass
+    at: datetime = field(default_factory=datetime.now)
 
 
 @dataclass(frozen=True)
@@ -116,3 +117,4 @@ class Error(Event):
 @dataclass(frozen=True)
 class Stopped(Event):
     reason: str  # "user" | "session limit" | "error"
+    at: datetime = field(default_factory=datetime.now)

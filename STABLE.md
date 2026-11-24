@@ -2,11 +2,17 @@
 
 ## Current stable release
 
+The user approved [v1.2.0](https://github.com/Tmthetom/wow-fishing-forever/releases/tag/v1.2.0). The Fishing dashboard shows the latest 14 days of catch history, session start and stop times, catches per hour, and time since the last catch. Bite diagnostics names the four reference sounds in its legend.
+
+- [Download the v1.2.0 source ZIP](https://github.com/Tmthetom/wow-fishing-forever/archive/refs/tags/v1.2.0.zip)
+
+## Previous stable release v1.1.0
+
 The user tested and approved [v1.1.0](https://github.com/Tmthetom/wow-fishing-forever/releases/tag/v1.1.0) in WoW Forever. It includes the River Desk redesign, timestamped activity logs, and the feathered bobber icon. On Windows, direct window capture is optional. Automatic calibration waits for the cast to land, and quick Stop → Start no longer resends a lure macro during the application wait.
 
 - [Download the v1.1.0 source ZIP](https://github.com/Tmthetom/wow-fishing-forever/archive/refs/tags/v1.1.0.zip)
 
-## Previous stable release
+## Previous stable release v1.0.0
 
 The user tested this version in WoW Forever and approved it as the new recovery point. It includes faster bobber icon acquisition and preserves the Bright Baubles timer across Stop → Start while River Desk stays open. Keep the manual starter catches and calibrate before each session.
 
