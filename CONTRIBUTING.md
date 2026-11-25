@@ -46,16 +46,24 @@ this automatically.
 
 ## Branches and releases
 
-- `forever` is the development branch for the rewrite. `main` holds the legacy bot until
-  the rewrite fishes end to end.
-- Versions are PEP 440 (`1.0.0a1`, `1.0.0b1`, `1.0.0rc1`, `1.0.0`). Tags are `v` + version.
-- The version is not written anywhere in the repo. hatch-vcs derives it from the latest git
-  tag when the package is installed: a tagged commit gets exactly that version, later commits
-  get a dev version such as `1.0.0b2.dev3+g1a2b3c4`. `wowfish --version` shows it.
-- To cut a release, tag the commit and push the tag:
-  `git tag v<version> && git push origin v<version>`. The release workflow checks that the
-  package assets are present, builds three executables, and publishes a GitHub Release
-  (marked prerelease for a/b/rc versions).
+Follow the approval and publication conventions in [AGENTS.md](AGENTS.md). `main` is this
+fork's publication branch. The tagged stable builds and recovery instructions are in
+[STABLE.md](STABLE.md).
+
+1. Run the relevant checks before publishing the release commit. For a user-facing change,
+   confirm the user's approval and record which behavior was verified in the game.
+2. Update the stable release links in README and STABLE, preserving earlier recovery points.
+   Publish the approved commit through GitHub MCP and verify the remote branch head.
+3. Create the GitHub Release from that exact commit using a `v`-prefixed version such as
+   `v1.2.1`. Use a patch version for small fixes and a minor version for new functionality.
+   Verify that GitHub marks the approved release as **Latest** and shows the expected commit.
+
+Hatch-vcs derives the installed version from Git tags. A tagged checkout gets the tag's
+version and intervening commits get a development version. Check it with `wowfish --version`.
+
+The [release workflow](.github/workflows/release.yml) is configured to build executables and
+attach them to a draft for version tags when the workflow runs successfully. Check the actual
+release assets before advertising a compiled download. GitHub also provides source archives.
 
 ## Updating the bundled clips or sprites
 

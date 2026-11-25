@@ -2,12 +2,24 @@
 
 This is a Windows fork of [WoW Fishing Forever](https://github.com/rsamf/wow-fishing-forever), licensed under MIT. Work from the repository root. Keep user-facing instructions in concise English and consistent with [README.md](README.md).
 
+## Collaboration
+
+- Agree on the outcome and scope, then make the smallest coherent change. For an incident, start with the relevant log and a focused reproduction. Run focused checks after the change and the full relevant suite before handing over a test build or publishing a stable release.
+- Report what was implemented, which automated checks passed, what was verified in the game, and what still needs verification. Keep progress updates concise and report meaningful changes.
+- Keep one implementation owner. Use Sol for routine work and reserve Astra for a bounded issue with evidence and a clear acceptance criterion.
+- Use GitHub MCP for supported publishing operations. After publishing, verify the remote branch head and link the commit. Treat publishing a commit, installing a candidate, running a live test, and issuing a stable release as separate actions with project-specific approval.
+- Update documentation with the behavior it describes. Keep one authoritative location for each fact and link to it elsewhere. Keep local settings, session logs, and personal data out of Git.
+
+## Fishing publication
+
+- Prepare application changes locally for the user's review. Publish approved changes to `main` and tag a stable release when the user approves it. Publish standalone documentation updates when requested.
+- Follow [CONTRIBUTING.md](CONTRIBUTING.md) for the release procedure and preserve the recovery references in [STABLE.md](STABLE.md). Use the connected GitHub MCP and GitHub's release form as needed. Keep this workflow independent of Git Credential Manager.
+
 ## Documentation maintenance
 
 - Document every significant feature, behavior change, configuration option, workaround, and known limitation in README as part of the same change. Keep the GUI instructions and this file consistent; use concise, grammatical English.
-- Distinguish implemented behavior, automated checks, user-verified behavior, and planned work. Do not describe proposals or untested builds as working releases. Preserve the stable recovery reference.
+- Mark planned work as planned.
 - A portable Windows x64 ZIP with bundled Python and dependencies is an agreed future sharing option, not an implemented packaging workflow. Prepare it when requested, from a selected commit with clean defaults and license notices; exclude personal state and logs. Verify relocation and startup on a clean PC before calling it portable. Do not distribute the current virtual environment or machine-specific shortcuts as a ready-made package.
-- Use the connected GitHub MCP for publishing changes. Do not trigger a separate Git Credential Manager sign-in or use `git push` for this workflow.
 
 ## Install on Windows x64
 
