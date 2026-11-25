@@ -10,7 +10,6 @@ from typing import Any
 import ttkbootstrap as tb
 from ttkbootstrap.widgets.scrolled import ScrolledFrame
 
-from wowfish.gui.catch_history import HISTORY_DAYS
 from wowfish.gui.presenter import Presenter, View
 
 SURFACE = "#192a35"
@@ -35,7 +34,7 @@ def _duration(seconds: float) -> str:
 def _session_time(stamp: datetime | None) -> str:
     if stamp is None:
         return "—"
-    return stamp.strftime("%H:%M:%S" if stamp.date() == date.today() else "%d %b %H:%M:%S")
+    return stamp.strftime("%d %b %Y %H:%M:%S")
 
 
 def _catch_rate(catches: int, elapsed_s: float) -> str:
@@ -102,20 +101,54 @@ class FishPage:
         )
         chart_card = tb.Frame(body, style="Dashboard.TFrame", padding=12)
         chart_card.pack(fill="x", pady=(12, 0))
+        header = tb.Frame(chart_card, style="Dashboard.TFrame")
+        header.pack(fill="x")
+        header.columnconfigure(0, weight=1)
+        self.history_heading = tb.Frame(header, style="Dashboard.TFrame")
+        self.history_heading.grid(row=0, column=0, sticky="nw")
         tb.Label(
-            chart_card, text="Catches by day", style="Metric.TLabel",
+            self.history_heading, text="Catches by day", style="Metric.TLabel",
             font=("TkDefaultFont", 12, "bold"),
         ).pack(anchor="w")  # fmt: skip
-        self.summary = tb.Label(chart_card, style="MetricCaption.TLabel")
-        self.summary.pack(anchor="w", pady=(3, 0))
+        self.history_week = tb.Label(
+            self.history_heading, text="7-day total  0", style="MetricCaption.TLabel"
+        )
+        self.history_week.pack(anchor="w", pady=(4, 0))
+        self.history_readout = tb.Frame(header, style="Dashboard.TFrame")
+        self.history_value = tb.Label(
+            self.history_readout, text="0", style="Metric.TLabel",
+            font=("TkDefaultFont", 21, "bold"),
+        )  # fmt: skip
+        self.history_value.pack(anchor="e")
+        self.history_caption = tb.Label(
+            self.history_readout, text="Catches today", style="MetricCaption.TLabel"
+        )
+        self.history_caption.pack(anchor="e")
+        self._history_header_wide: bool | None = None
+        header.bind("<Configure>", lambda event: self._layout_history_header(event.width))
+        self._layout_history_header(0)
         self.chart = Canvas(chart_card, background=SURFACE, highlightthickness=0, height=174)
         self.chart.pack(fill="x", pady=(6, 0))
         self.chart.bind("<Configure>", lambda _event: self._draw_history())
         self.chart.bind("<Motion>", self._show_day)
-        self.chart.bind("<Leave>", lambda _event: self.summary.configure(text=self._summary))
+        self.chart.bind("<Leave>", lambda _event: self._select_day(None))
         self._history: tuple[tuple[date, int], ...] = ()
-        self._summary = f"Last {HISTORY_DAYS} days"
-        self.summary.configure(text=self._summary)
+        self._selected_day: date | None = None
+
+    def _layout_history_header(self, width: int) -> None:
+        required = (
+            self.history_heading.winfo_reqwidth() + self.history_readout.winfo_reqwidth() + 16
+        )
+        wide = width >= required
+        if wide == self._history_header_wide:
+            return
+        self._history_header_wide = wide
+        self.history_readout.grid(
+            row=0 if wide else 1,
+            column=1 if wide else 0,
+            sticky="ne",
+            pady=(0 if wide else 6, 0),
+        )
 
     def _layout_metrics(self, width: int) -> None:
         columns = 3 if width >= 620 else 2
@@ -167,13 +200,13 @@ class FishPage:
             label.configure(text=str(value))
         started = _session_time(view.started_at)
         stopped = "In progress" if view.running else _session_time(view.stopped_at)
-        self.session_times.configure(text=f"Started  {started}     ·     Stopped  {stopped}")
+        separator = "\n" if self.session_times.winfo_width() < 490 else "     ·     "
+        self.session_times.configure(text=f"Started  {started}{separator}Stopped  {stopped}")
         if self._history != view.daily_catches:
             self._history = view.daily_catches
-            recent = sum(count for _, count in self._history)
-            today = self._history[-1][1] if self._history else 0
-            self._summary = f"Today  {today:,}     ·     Last {HISTORY_DAYS} days  {recent:,}"
-            self.summary.configure(text=self._summary)
+            week_total = sum(count for _, count in self._history[-7:])
+            self.history_week.configure(text=f"7-day total  {week_total:,}")
+            self._update_history_readout()
             self._draw_history()
 
     def _draw_history(self) -> None:
@@ -218,7 +251,20 @@ class FishPage:
         offset = event.x - CHART_LEFT
         if self._history and width > 0 and 0 <= offset < width:
             index = int(offset * len(self._history) / width)
-            day, count = self._history[index]
-            self.summary.configure(text=f"{day:%d %b %Y}     ·     {count:,} catches")
+            self._select_day(self._history[index][0])
         else:
-            self.summary.configure(text=self._summary)
+            self._select_day(None)
+
+    def _select_day(self, day: date | None) -> None:
+        if day != self._selected_day:
+            self._selected_day = day
+            self._update_history_readout()
+
+    def _update_history_readout(self) -> None:
+        today, total = self._history[-1] if self._history else (date.today(), 0)
+        selected = next((entry for entry in self._history if entry[0] == self._selected_day), None)
+        day, count = selected if selected is not None else (today, total)
+        caption = "Catches today" if selected is None else f"{day:%d %b %Y}"
+        self.history_value.configure(text=f"{count:,}")
+        self.history_caption.configure(text=caption)
+        self._layout_history_header(self.history_readout.master.winfo_width())

@@ -2,6 +2,12 @@
 
 ## Current stable release
 
+The user approved [v1.2.1](https://github.com/Tmthetom/wow-fishing-forever/releases/tag/v1.2.1). It shows full dates on the Fishing dashboard, adds a seven-day catch total, and highlights the count for the day selected in the chart.
+
+- [Download the v1.2.1 source ZIP](https://github.com/Tmthetom/wow-fishing-forever/archive/refs/tags/v1.2.1.zip)
+
+## Previous stable release v1.2.0
+
 The user approved [v1.2.0](https://github.com/Tmthetom/wow-fishing-forever/releases/tag/v1.2.0). The Fishing dashboard shows the latest 14 days of catch history, session start and stop times, catches per hour, and time since the last catch. Bite diagnostics names the four reference sounds in its legend.
 
 - [Download the v1.2.0 source ZIP](https://github.com/Tmthetom/wow-fishing-forever/archive/refs/tags/v1.2.0.zip)

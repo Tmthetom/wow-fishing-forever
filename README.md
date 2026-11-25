@@ -4,11 +4,11 @@
 
 **River Desk** automates fishing in World of Warcraft: Forever on Windows. It finds the gold gear icon above the bobber, listens for the splash, and uses your Interact binding to reel in the catch.
 
-[Download the stable release v1.2.0](https://github.com/Tmthetom/wow-fishing-forever/releases/tag/v1.2.0) · [Recover an earlier release](STABLE.md)
+[Download the stable release v1.2.1](https://github.com/Tmthetom/wow-fishing-forever/releases/tag/v1.2.1) · [Recover an earlier release](STABLE.md)
 
 ## Features
 
-- **Fishing dashboard:** See session totals, start and stop times, average catches per hour, and time since the last catch. The daily chart shows the last 14 days, with exact counts on hover.
+- **Fishing dashboard:** See session totals, local start and stop dates and times, average catches per hour, and time since the last catch. The 14-day chart shows a seven-day total that includes today. Hover over a bar to switch the highlighted count from today to the selected date.
 - **Bobber and bite detection:** Calibrate the gear icon for your display. The app uses the saved size first and can remeasure it if needed.
 - **Optional lure and session controls:** Apply Bright Baubles on a timer, set a stop time, or enable periodic focus checks and jumps.
 - **Diagnostics:** Copy timestamped logs and inspect the last matched frame and the audio score for each reference splash.
